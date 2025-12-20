@@ -2,9 +2,11 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 // Import the Login page from pages/Login (file exists at pages/Login/Login.jsx)
 import LoginPage from './pages/Login/Login';
+import UserTypeSelection from './pages/Login/UserTypeSelection';
 import AdminLogin from './pages/Admin Pages/AdminLogin';
 import AdminDashboard from './pages/Admin Pages/AdminDashboard';
 import VendorApplicationReview from './pages/Admin Pages/VendorApplicationReview';
+import LabourVerification from './pages/Admin Pages/LabourVerification';
 import VendorManagement from './pages/Admin Pages/VendorManagement';
 import AdminReviews from './pages/Admin Pages/AdminReviews';
 import AdminUsers from './pages/Admin Pages/AdminUsers';
@@ -19,6 +21,7 @@ import UserOrders from './pages/User Pages/UserOrders';
 import OrderPlacement from './pages/User Pages/OrderPlacement';
 import UserMessages from './pages/User Pages/User-Messages';
 import VendorReg from './pages/Vendor Pages/VendorReg.jsx';
+import LabourReg from './pages/Vendor Pages/LabourReg.jsx';
 import VendorDashboard from './pages/Vendor Pages/VendorDashboard.jsx';
 import BookingManagement from './pages/Vendor Pages/BookingManagement.jsx';
 import Services from './pages/Vendor Pages/Services.jsx';
@@ -30,13 +33,24 @@ function App() {
     <div className="min-h-screen">
       <Routes>
         <Route path="/" element={<LoginPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        
+        {/* Registration Routes */}
+        <Route path="/register" element={<UserTypeSelection />} />
+        <Route path="/register/vendor" element={<VendorReg />} />
+        <Route path="/register/labour" element={<LabourReg />} />
+        
+        {/* Admin Routes */}
         <Route path="/AdminLogin" element={<AdminLogin />} />
         <Route path="/AdminDashboard" element={<AdminDashboard />} />
         <Route path="/admin/vendors" element={<VendorApplicationReview />} />
+        <Route path="/admin/labour" element={<LabourVerification />} />
         <Route path="/admin/vendor-management" element={<VendorManagement />} />
         <Route path="/admin/reviews" element={<AdminReviews />} />
         <Route path="/admin/users" element={<AdminUsers />} />
         <Route path="/admin/analytics" element={<AdminAnalysis />} />
+        
+        {/* User Routes */}
         <Route path="/main" element={<MainPage />} />
         <Route path="/search" element={<SearchResults />} />
         <Route path="/business/:id" element={<EndUserBusinessDetails />} />
@@ -46,6 +60,8 @@ function App() {
         <Route path="/my-orders" element={<UserOrders />} />
         <Route path="/order" element={<OrderPlacement />} />
         <Route path="/messages" element={<UserMessages />} />
+        
+        {/* Vendor Routes */}
         <Route path="/vendor-register" element={<VendorReg />} />
         <Route path="/vendor-dashboard" element={<VendorDashboard />} />
         <Route path="/vendor-bookings" element={<BookingManagement />} />

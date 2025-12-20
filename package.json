@@ -14,7 +14,8 @@
     "test:functional": "jest Test\\ Cases/Backend\\ Tests/Functional\\ Testing",
     "test:integration": "jest Test\\ Cases/Backend\\ Tests/Integration\\ Testing",
     "test:business": "jest Test\\ Cases/Backend\\ Tests/Business\\ Rule\\ Testing",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "assign-locations": "node scripts/assignIslamabadLocations.js"
   },
   "keywords": [],
   "author": "",
@@ -28,9 +29,12 @@
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.553.0",
+    "mapbox-gl": "^2.15.0",
     "mongoose": "^8.19.3",
+    "multer": "^2.0.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-map-gl": "^7.1.7",
     "react-router-dom": "^7.9.5"
   },
   "devDependencies": {

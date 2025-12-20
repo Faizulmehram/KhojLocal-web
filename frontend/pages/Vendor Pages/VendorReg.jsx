@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Store, Clock, Briefcase, Image, HelpCircle } from "lucide-react";
+import VendorMap from "../../components/VendorMap";
 
 /**
  * VendorOnboarding - Multi-step vendor registration form
@@ -57,6 +58,11 @@ const initialState = {
   password: "",
   confirmPassword: "",
   serviceType: "both", // "booking", "ordering", or "both"
+  location: {
+    latitude: null,
+    longitude: null,
+    address: ""
+  }
 };
 
 let serviceIdCounter = 2;
@@ -200,7 +206,15 @@ export default function VendorOnboarding() {
           city: "",
           state: "",
           zipCode: "",
-          country: ""
+          country: "",
+          fullAddress: form.location.address || form.address
+        },
+        location: {
+          latitude: form.location.latitude,
+          longitude: form.location.longitude,
+          coordinates: form.location.longitude && form.location.latitude 
+            ? [form.location.longitude, form.location.latitude] 
+            : undefined
         },
         description: form.description,
         services: form.services.map(s => s.name).filter(n => n),
@@ -404,6 +418,26 @@ export default function VendorOnboarding() {
               </div>
 
               <div className="pt-4 border-t border-gray-200">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Business Location</h3>
+                <p className="text-xs sm:text-sm text-gray-600 mb-4">Pin your exact location on the map so customers can find you easily</p>
+                <VendorMap
+                  isEditable={true}
+                  initialLocation={form.location}
+                  onLocationChange={(locationData) => {
+                    update({
+                      location: {
+                        latitude: locationData.latitude,
+                        longitude: locationData.longitude,
+                        address: locationData.address
+                      }
+                    });
+                  }}
+                  height="450px"
+                />
+                {errors.location && <div className="text-red-600 text-xs sm:text-sm mt-1.5">{errors.location}</div>}
+              </div>
+
+              <div className="pt-6 mt-4 border-t border-gray-200">
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Service Type</h3>
                 <p className="text-xs sm:text-sm text-gray-600 mb-4">What type of services will you offer?</p>
                 <div className="space-y-3 mb-6">

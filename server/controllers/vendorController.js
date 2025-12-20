@@ -17,6 +17,7 @@ const registerVendor = async (req, res) => {
       services,
       serviceType,
       images,
+      location,
     } = req.body;
 
     // Validation
@@ -33,6 +34,24 @@ const registerVendor = async (req, res) => {
         .json({ message: "Please provide all required fields" });
     }
 
+    // Validate location data if provided
+    if (location) {
+      if (location.latitude && location.longitude) {
+        // Validate latitude range (-90 to 90)
+        if (location.latitude < -90 || location.latitude > 90) {
+          return res.status(400).json({ 
+            message: "Invalid latitude value. Must be between -90 and 90." 
+          });
+        }
+        // Validate longitude range (-180 to 180)
+        if (location.longitude < -180 || location.longitude > 180) {
+          return res.status(400).json({ 
+            message: "Invalid longitude value. Must be between -180 and 180." 
+          });
+        }
+      }
+    }
+
     // Check if vendor already exists
     const vendorExists = await Vendor.findOne({ email });
     if (vendorExists) {
@@ -41,8 +60,8 @@ const registerVendor = async (req, res) => {
         .json({ message: "Vendor already exists with this email" });
     }
 
-    // Create vendor
-    const vendor = await Vendor.create({
+    // Prepare vendor data
+    const vendorData = {
       businessName,
       ownerName,
       email,
@@ -55,7 +74,20 @@ const registerVendor = async (req, res) => {
       serviceType: serviceType || "both", // booking, ordering, or both
       images: images || { logo: "", banner: "", gallery: [] },
       status: "Pending", // Vendor needs admin approval
-    });
+    };
+
+    // Add location if provided
+    if (location && location.latitude && location.longitude) {
+      vendorData.location = {
+        type: 'Point',
+        coordinates: [location.longitude, location.latitude],
+        latitude: location.latitude,
+        longitude: location.longitude,
+      };
+    }
+
+    // Create vendor
+    const vendor = await Vendor.create(vendorData);
 
     if (vendor) {
       res.status(201).json({
@@ -66,6 +98,7 @@ const registerVendor = async (req, res) => {
         phone: vendor.phone,
         category: vendor.category,
         status: vendor.status,
+        location: vendor.location,
         message:
           "Registration successful! Your application is pending admin approval.",
         token: generateToken(vendor._id, "vendor"),

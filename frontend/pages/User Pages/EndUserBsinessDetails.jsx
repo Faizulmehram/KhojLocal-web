@@ -2,6 +2,35 @@ import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import { Phone, Navigation, Share2, Star, MapPin } from 'lucide-react';
+import VendorMap from '../../components/VendorMap';
+
+// Helper function to get current day of week
+const getCurrentDay = () => {
+  const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  return days[new Date().getDay()];
+};
+
+// Helper function to format business hours
+const formatBusinessHours = (hours) => {
+  if (!hours || !hours.open || !hours.close) {
+    return 'Closed';
+  }
+  if (hours.isClosed) {
+    return 'Closed';
+  }
+  
+  // Convert 24h to 12h format
+  const formatTime = (time) => {
+    if (!time) return '';
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'pm' : 'am';
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    return `${displayHour}${minutes !== '00' ? ':' + minutes : ''}${ampm}`;
+  };
+  
+  return `${formatTime(hours.open)} - ${formatTime(hours.close)}`;
+};
 
 const GALLERY = [
   'https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?w=800',
@@ -32,6 +61,20 @@ export default function EndUserBusinessDetails() {
   const name = business?.name || 'The Artisan Bakery';
   const price = business?.price || '$$';
   const distance = business?.distance || '0.2 km';
+  
+  // Get current day
+  const currentDay = getCurrentDay();
+  
+  // Days of the week for display
+  const daysOfWeek = [
+    { key: 'monday', label: 'Monday' },
+    { key: 'tuesday', label: 'Tuesday' },
+    { key: 'wednesday', label: 'Wednesday' },
+    { key: 'thursday', label: 'Thursday' },
+    { key: 'friday', label: 'Friday' },
+    { key: 'saturday', label: 'Saturday' },
+    { key: 'sunday', label: 'Sunday' }
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
@@ -153,24 +196,53 @@ export default function EndUserBusinessDetails() {
             <div className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-gray-200">
               <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Location</h2>
               <div className="rounded-lg sm:rounded-xl overflow-hidden mb-3">
-                <img src="https://images.unsplash.com/photo-1528909514045-2fa4ac7a08ba?w=800" alt="Map" className="w-full h-40 sm:h-48 object-cover" />
+                <VendorMap
+                  isEditable={false}
+                  initialLocation={business?.location ? {
+                    latitude: business.location.latitude,
+                    longitude: business.location.longitude,
+                    address: business.location.address || business.address?.fullAddress
+                  } : null}
+                  height="240px"
+                />
               </div>
               <div className="flex items-start gap-2 text-gray-700 text-sm sm:text-base">
                 <MapPin className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 text-violet-600 flex-shrink-0" />
-                <p>123 Main Street, San Francisco, CA 94110</p>
+                <p>{business?.location?.address || business?.address?.fullAddress || '123 Main Street, San Francisco, CA 94110'}</p>
               </div>
             </div>
 
             <div className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-gray-200">
               <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Hours</h2>
               <ul className="space-y-2 text-xs sm:text-sm text-gray-700">
-                <li className="flex justify-between"><span>Monday</span><span className="font-medium">7am - 6pm</span></li>
-                <li className="flex justify-between bg-violet-50 text-violet-700 p-2 rounded-lg"><strong>Tuesday (Today)</strong><strong>7am - 6pm</strong></li>
-                <li className="flex justify-between"><span>Wednesday</span><span className="font-medium">7am - 6pm</span></li>
-                <li className="flex justify-between"><span>Thursday</span><span className="font-medium">7am - 6pm</span></li>
-                <li className="flex justify-between"><span>Friday</span><span className="font-medium">7am - 8pm</span></li>
-                <li className="flex justify-between"><span>Saturday</span><span className="font-medium">8am - 8pm</span></li>
-                <li className="flex justify-between"><span>Sunday</span><span className="font-medium">8am - 4pm</span></li>
+                {daysOfWeek.map((day) => {
+                  const isToday = day.key === currentDay;
+                  const hours = business?.businessHours?.[day.key];
+                  const hoursText = formatBusinessHours(hours);
+                  
+                  return (
+                    <li 
+                      key={day.key}
+                      className={`flex justify-between ${
+                        isToday 
+                          ? 'bg-violet-50 text-violet-700 p-2 rounded-lg' 
+                          : ''
+                      }`}
+                    >
+                      {isToday ? (
+                        <>
+                          <strong>{day.label} (Today)</strong>
+                          <strong>{hoursText}</strong>
+                        </>
+                      ) : (
+                        <>
+                          <span>{day.label}</span>
+                          <span className="font-medium">{hoursText}</span>
+                        </>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           </aside>

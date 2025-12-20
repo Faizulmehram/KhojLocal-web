@@ -51,6 +51,20 @@ const vendorSchema = new mongoose.Schema({
     state: String,
     zipCode: String,
     country: { type: String, default: "USA" },
+    fullAddress: String, // Complete formatted address
+  },
+  location: {
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point'
+    },
+    coordinates: {
+      type: [Number], // [longitude, latitude]
+      index: '2dsphere'
+    },
+    latitude: Number,
+    longitude: Number,
   },
   description: {
     type: String,

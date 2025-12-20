@@ -308,9 +308,9 @@ export default function LoginPage() {
                       Login as Vendor
                     </button>
                     
-                    {/* Register as Vendor */}
+                    {/* Register as Vendor - Opens user type selection */}
                     <button
-                      onClick={() => navigate("/vendor-register")}
+                      onClick={() => navigate("/register")}
                       className="w-full bg-white border-2 border-[#174f48] text-[#174f48] py-3 rounded-md text-sm font-medium hover:bg-[#174f48] hover:text-white transition-colors"
                     >
                       Register as Vendor

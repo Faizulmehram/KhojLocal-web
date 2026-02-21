@@ -48,8 +48,14 @@ const bookingSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ["Prepaid", "Pay-On-Completion"],
+    enum: ["Prepaid", "Pay-On-Completion", "Stripe"],
     default: "Prepaid",
+  },
+  stripeSessionId: {
+    type: String,
+  },
+  stripePaymentIntentId: {
+    type: String,
   },
   totalAmount: {
     type: Number,

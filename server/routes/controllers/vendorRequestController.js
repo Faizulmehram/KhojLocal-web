@@ -1,5 +1,6 @@
 import Booking from "../models/Booking.js";
 import Order from "../models/Order.js";
+const { createNotification } = require('../../controllers/notificationController');
 
 
 // @desc    Get vendor's incoming booking requests
@@ -122,6 +123,17 @@ const acceptBooking = async (req, res) => {
     await booking.save();
     await booking.populate("user", "name email phone");
 
+    // Create notification for user
+    await createNotification({
+      user: booking.user._id,
+      type: 'booking',
+      title: 'Booking Confirmed',
+      message: `Your booking has been confirmed by the vendor.`,
+      link: `/my-bookings/${booking._id}`,
+      relatedBooking: booking._id,
+      priority: 'high',
+    });
+
     res.json({
       success: true,
       message: "Booking accepted successfully",
@@ -169,6 +181,17 @@ const rejectBooking = async (req, res) => {
 
     await booking.save();
     await booking.populate("user", "name email phone");
+
+    // Create notification for user
+    await createNotification({
+      user: booking.user._id,
+      type: 'booking',
+      title: 'Booking Rejected',
+      message: `Your booking has been rejected. Reason: ${rejectionReason}`,
+      link: `/my-bookings/${booking._id}`,
+      relatedBooking: booking._id,
+      priority: 'high',
+    });
 
     res.json({
       success: true,
@@ -313,6 +336,17 @@ const acceptOrder = async (req, res) => {
         : "Pending Payment";
     order.vendorResponse = {
       respondedAt: Date.now(),
+    // Create notification for user
+    await createNotification({
+      user: order.user._id,
+      type: 'order',
+      title: 'Order Confirmed',
+      message: `Your order #${order.orderNumber || order._id.toString().slice(-6)} has been confirmed by the vendor.`,
+      link: `/my-orders/${order._id}`,
+      relatedOrder: order._id,
+      priority: 'high',
+    });
+
       action: "Accepted",
     };
     order.statusHistory.push({
@@ -366,6 +400,17 @@ const rejectOrder = async (req, res) => {
     order.rejectionReason = rejectionReason;
     order.vendorResponse = {
       respondedAt: Date.now(),
+    // Create notification for user
+    await createNotification({
+      user: order.user._id,
+      type: 'order',
+      title: 'Order Rejected',
+      message: `Your order #${order.orderNumber || order._id.toString().slice(-6)} has been rejected. Reason: ${rejectionReason}`,
+      link: `/my-orders/${order._id}`,
+      relatedOrder: order._id,
+      priority: 'high',
+    });
+
       action: "Rejected",
     };
     order.statusHistory.push({

@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const connectDB = require('./config/database');
 
 // Import routes
@@ -11,6 +11,8 @@ const adminRoutes = require('./routes/adminRoutes');
 const adminManagementRoutes = require('./routes/adminManagementRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const labourRoutes = require('./routes/labourRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const stripeRoutes = require('./routes/stripeRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -35,6 +37,10 @@ app.use('/api/auth/admin', adminRoutes);
 app.use('/api/admin', adminManagementRoutes);
 app.use('/api/vendors', publicRoutes);
 app.use('/api/labour', labourRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/stripe', stripeRoutes);
+
+console.log('✅ All routes registered including Stripe routes');
 
 // 404 handler
 app.use((req, res) => {

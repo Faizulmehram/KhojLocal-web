@@ -9,6 +9,9 @@ const { generateOTP, storeOTP, verifyOTP, sendOTPSMS } = require("../utils/otpSe
 exports.sendPhoneOTP = async (req, res) => {
   try {
     const { phone } = req.body;
+    
+    console.log('\n🔔 OTP Request Received');
+    console.log('📞 Phone:', phone);
 
     if (!phone) {
       return res.status(400).json({
@@ -17,9 +20,10 @@ exports.sendPhoneOTP = async (req, res) => {
       });
     }
 
-    // Check if phone already registered
-    const existingUser = await User.findOne({ phone });
-    if (existingUser) {
+    // Check if phone already registered in Labour collection
+    const existingLabour = await Labour.findOne({ phone });
+    if (existingLabour) {
+      console.log('❌ Phone already registered');
       return res.status(400).json({
         success: false,
         message: "Phone number already registered",
@@ -27,9 +31,11 @@ exports.sendPhoneOTP = async (req, res) => {
     }
 
     // Generate and send OTP
+    console.log('🔐 Generating OTP...');
     const otp = generateOTP();
     storeOTP(phone, otp);
     await sendOTPSMS(phone, otp);
+    console.log('✅ OTP sent successfully\n');
 
     res.json({
       success: true,
@@ -167,24 +173,13 @@ exports.registerLabour = async (req, res) => {
       });
     }
 
-    // Check if phone already exists
-    const existingUser = await User.findOne({ phone });
-    if (existingUser) {
+    // Check if phone already exists in Labour collection
+    const existingLabourPhone = await Labour.findOne({ phone });
+    if (existingLabourPhone) {
       return res.status(400).json({
         success: false,
         message: "Phone number already registered",
       });
-    }
-
-    // Check if email already exists (if provided)
-    if (email) {
-      const existingEmail = await User.findOne({ email });
-      if (existingEmail) {
-        return res.status(400).json({
-          success: false,
-          message: "Email already registered",
-        });
-      }
     }
 
     // Validate documents uploaded
@@ -211,23 +206,26 @@ exports.registerLabour = async (req, res) => {
       });
     }
 
-    // Create User account
-    const user = await User.create({
-      name: fullName,
-      email: email || `labour_${phone}@khoojlocal.com`, // Generate email if not provided
-      password,
-      phone,
-      role: "user",
-      userType: "labour",
-    });
+    // Generate email if not provided
+    const cleanPhone = phone.replace(/[^\d]/g, '');
+    const labourEmail = email || `labour_${cleanPhone}@khoojlocal.com`;
 
-    // Create Labour profile
+    // Check if email already exists
+    const existingLabourEmail = await Labour.findOne({ email: labourEmail });
+    if (existingLabourEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "Email already registered",
+      });
+    }
+
+    // Create Labour profile with email and password (no User account needed)
     const labour = await Labour.create({
-      userId: user._id,
       fullName,
+      email: labourEmail,
+      password, // Will be hashed by pre-save hook
       phone,
       phoneVerified: true,
-      email: email || "",
       cnicNumber,
       documents: {
         cnicFront: `/uploads/labour/cnic/${req.files.cnicFront[0].filename}`,
@@ -256,19 +254,16 @@ exports.registerLabour = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Registration successful! Your profile is under verification.",
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        userType: user.userType,
-      },
       labour: {
         _id: labour._id,
+        fullName: labour.fullName,
+        email: labour.email,
+        phone: labour.phone,
+        skill: labour.skill,
         verificationStatus: labour.verificationStatus,
         isApproved: labour.isApproved,
       },
-      token: generateToken(user._id),
+      token: generateToken(labour._id, "labour"),
     });
   } catch (error) {
     console.error("Labour registration error:", error);
@@ -557,6 +552,34 @@ exports.rejectLabour = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Server error",
+      error: error.message,
+    });
+  }
+};
+// @desc    Get labour bookings
+// @route   GET /api/labour/bookings
+// @access  Private (Labour only)
+exports.getLabourBookings = async (req, res) => {
+  try {
+    const labourId = req.labour._id;
+
+    const Booking = require("../models/Booking");
+    
+    // Find all bookings where vendor references this labour worker
+    const bookings = await Booking.find({ vendor: labourId })
+      .populate("user", "name email phone")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: bookings.length,
+      bookings,
+    });
+  } catch (error) {
+    console.error("Get labour bookings error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error fetching bookings",
       error: error.message,
     });
   }

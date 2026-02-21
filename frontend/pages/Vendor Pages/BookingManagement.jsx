@@ -44,16 +44,26 @@ export default function BookingManagement() {
   const [toast, setToast] = useState(null);
   const [activeTab, setActiveTab] = useState('pending');
   const [vendorServiceType, setVendorServiceType] = useState('both');
+  const [isLabour, setIsLabour] = useState(false);
 
   useEffect(() => {
-    fetchVendorProfile();
+    // Check if user is labour or vendor
+    const labourData = localStorage.getItem("labour");
+    const vendorData = localStorage.getItem("vendor");
+    
+    if (labourData) {
+      setIsLabour(true);
+      setVendorServiceType('booking'); // Labour only does bookings
+    } else if (vendorData) {
+      fetchVendorProfile();
+    }
   }, []);
 
   useEffect(() => {
-    if (vendorServiceType) {
+    if (vendorServiceType || isLabour) {
       fetchData();
     }
-  }, [activeTab, vendorServiceType]);
+  }, [activeTab, vendorServiceType, isLabour]);
 
   const fetchVendorProfile = async () => {
     try {
@@ -84,8 +94,43 @@ export default function BookingManagement() {
       const headers = { Authorization: `Bearer ${token}` };
       const allItems = [];
 
-      // Fetch bookings if vendor offers booking services
-      if (vendorServiceType === 'booking' || vendorServiceType === 'both') {
+      // If labour, only fetch labour bookings
+      if (isLabour) {
+        try {
+          const bookingsResponse = await axios.get(
+            "http://localhost:5000/api/labour/bookings",
+            { headers }
+          );
+          
+          if (bookingsResponse.data.success && bookingsResponse.data.bookings) {
+            const mappedBookings = bookingsResponse.data.bookings.map((booking) => ({
+              id: booking._id,
+              type: 'booking',
+              name: booking.user?.name || 'Unknown User',
+              avatar: getAvatarFromName(booking.user?.name || 'User'),
+              service: 'Labour Booking',
+              date: formatDate(booking.bookingDate),
+              time: booking.bookingTime || 'N/A',
+              amount: booking.totalAmount || 0,
+              paymentMethod: booking.paymentMethod || 'Pay-On-Completion',
+              status: mapStatus(booking.status, 'booking'),
+              bookingId: booking._id,
+              details: {
+                phone: booking.user?.phone || 'N/A',
+                notes: booking.notes || 'No notes provided',
+                workDescription: booking.workDescription || 'No description',
+                rawStatus: booking.status,
+              },
+            }));
+            allItems.push(...mappedBookings);
+          }
+        } catch (error) {
+          console.error("Error fetching labour bookings:", error);
+        }
+      } else {
+        // Vendor logic - fetch bookings and/or orders
+        // Fetch bookings if vendor offers booking services
+        if (vendorServiceType === 'booking' || vendorServiceType === 'both') {
         try {
           const bookingsResponse = await axios.get(
             "http://localhost:5000/api/auth/vendor/vendor/bookings",
@@ -150,6 +195,7 @@ export default function BookingManagement() {
           console.error("Error fetching orders:", error);
         }
       }
+      } // End of vendor else block
 
       setBookings(allItems);
     } catch (error) {

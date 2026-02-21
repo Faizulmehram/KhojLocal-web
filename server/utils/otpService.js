@@ -61,8 +61,13 @@ const verifyOTP = (phone, otp) => {
  */
 const sendOTPSMS = async (phone, otp) => {
   // Mock implementation - log to console
-  console.log(`📱 SMS OTP to ${phone}: ${otp}`);
-  console.log(`⏰ OTP valid for 5 minutes`);
+  console.log('\n╔════════════════════════════════════╗');
+  console.log('║       📱 OTP VERIFICATION         ║');
+  console.log('╠════════════════════════════════════╣');
+  console.log(`║ Phone: ${phone.padEnd(24)} ║`);
+  console.log(`║ OTP Code: ${otp.padEnd(21)} ║`);
+  console.log(`║ Valid for: 5 minutes              ║`);
+  console.log('╚════════════════════════════════════╝\n');
   
   // In production, use SMS service:
   // const client = require('twilio')(accountSid, authToken);

@@ -37,6 +37,7 @@ router.get('/profile', protect, getUserProfile);
 
 // Booking Management (User)
 router.post('/bookings', protect, createBooking);
+router.post('/labour-bookings', protect, createBooking); // Labour bookings use same endpoint
 router.get('/bookings/my-bookings', protect, getUserBookings);
 router.get('/bookings/:id', protect, getBookingById);
 router.put('/bookings/:id/cancel', protect, cancelBooking);

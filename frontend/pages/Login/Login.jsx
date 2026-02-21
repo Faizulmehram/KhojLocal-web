@@ -134,14 +134,20 @@ export default function LoginPage() {
         password: vendorPassword,
       });
 
-      const vendor = {
+      const accountData = {
         ...res.data,
         loggedIn: true,
       };
-      localStorage.setItem("vendor", JSON.stringify(vendor));
+      
+      // Store based on role
+      if (res.data.role === "labour") {
+        localStorage.setItem("labour", JSON.stringify(accountData));
+      } else {
+        localStorage.setItem("vendor", JSON.stringify(accountData));
+      }
       localStorage.setItem("token", res.data.token);
 
-      console.log("Vendor logged in:", vendor);
+      console.log(`${res.data.role} logged in:`, accountData);
       navigate("/vendor-dashboard");
     } catch (err) {
       setVendorError(err.response?.data?.message || "Login failed. Please try again.");

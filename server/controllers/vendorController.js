@@ -1,5 +1,87 @@
 const Vendor = require("../models/Vendor");
+const Labour = require("../models/Labour");
 const generateToken = require("../utils/generateToken");
+const { generateOTP, storeOTP, verifyOTP, sendOTPSMS } = require("../utils/otpService");
+
+// @desc    Send OTP to phone number for vendor registration
+// @route   POST /api/auth/vendor/send-otp
+// @access  Public
+const sendVendorOTP = async (req, res) => {
+  try {
+    const { phone } = req.body;
+
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        message: "Phone number is required",
+      });
+    }
+
+    // Check if phone already registered
+    const existingVendor = await Vendor.findOne({ phone });
+    if (existingVendor) {
+      return res.status(400).json({
+        success: false,
+        message: "Phone number already registered",
+      });
+    }
+
+    // Generate and send OTP
+    const otp = generateOTP();
+    storeOTP(phone, otp);
+    await sendOTPSMS(phone, otp);
+
+    res.json({
+      success: true,
+      message: "OTP sent successfully",
+    });
+  } catch (error) {
+    console.error("Send vendor OTP error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Verify OTP for vendor registration
+// @route   POST /api/auth/vendor/verify-otp
+// @access  Public
+const verifyVendorOTP = async (req, res) => {
+  try {
+    const { phone, otp } = req.body;
+
+    if (!phone || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Phone number and OTP are required",
+      });
+    }
+
+    const isValid = verifyOTP(phone, otp);
+
+    if (!isValid) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired OTP",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Phone number verified successfully",
+    });
+  } catch (error) {
+    console.error("Verify vendor OTP error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
 // @desc    Register new vendor
 // @route   POST /api/auth/vendor/register
 // @access  Public
@@ -11,6 +93,7 @@ const registerVendor = async (req, res) => {
       email,
       password,
       phone,
+      phoneVerified,
       category,
       address,
       description,
@@ -32,6 +115,14 @@ const registerVendor = async (req, res) => {
       return res
         .status(400)
         .json({ message: "Please provide all required fields" });
+    }
+
+    // Check phone verification
+    if (!phoneVerified) {
+      return res.status(400).json({
+        success: false,
+        message: "Please verify your phone number first",
+      });
     }
 
     // Validate location data if provided
@@ -126,59 +217,97 @@ const loginVendor = async (req, res) => {
         .json({ message: "Please provide email and password" });
     }
 
-    // Check for vendor and include password field
-    const vendor = await Vendor.findOne({ email }).select("+password");
+    // Check for vendor first
+    let vendor = await Vendor.findOne({ email }).select("+password");
+    let isLabour = false;
+    let labour = null;
 
+    // If not vendor, check for labour
     if (!vendor) {
+      labour = await Labour.findOne({ email }).select("+password");
+      if (labour) {
+        isLabour = true;
+      }
+    }
+
+    if (!vendor && !labour) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    // Check if vendor is active
-    if (!vendor.isActive) {
+    const account = vendor || labour;
+
+    // Check if account is active (vendors only)
+    if (vendor && !vendor.isActive) {
       return res
         .status(403)
         .json({ message: "Your account has been deactivated" });
     }
 
-    // Check if vendor is approved
-    if (vendor.status === "Pending") {
+    // Check approval status
+    if (account.status === "Pending") {
       return res
         .status(403)
         .json({ message: "Your application is still pending admin approval" });
     }
 
-    if (vendor.status === "Rejected") {
+    if (account.status === "Rejected") {
       return res
         .status(403)
         .json({ message: "Your application has been rejected" });
     }
 
-    if (vendor.status === "Suspended") {
+    if (vendor && vendor.status === "Suspended") {
       return res
         .status(403)
         .json({ message: "Your account has been suspended" });
     }
 
+    // Check if labour is approved
+    if (labour && !labour.isApproved) {
+      return res
+        .status(403)
+        .json({ message: "Your application is still pending admin approval" });
+    }
+
     // Check password
-    const isPasswordMatch = await vendor.comparePassword(password);
+    const isPasswordMatch = await account.comparePassword(password);
 
     if (!isPasswordMatch) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    // Update last login without triggering save middleware
-    await Vendor.findByIdAndUpdate(vendor._id, { lastLogin: Date.now() });
+    // Update last login
+    if (vendor) {
+      await Vendor.findByIdAndUpdate(vendor._id, { lastLogin: Date.now() });
+    }
 
-    res.json({
-      _id: vendor._id,
-      businessName: vendor.businessName,
-      ownerName: vendor.ownerName,
-      email: vendor.email,
-      phone: vendor.phone,
-      category: vendor.category,
-      status: vendor.status,
-      token: generateToken(vendor._id, "vendor"),
-    });
+    // Return response based on account type
+    if (isLabour) {
+      res.json({
+        _id: labour._id,
+        fullName: labour.fullName,
+        email: labour.email,
+        phone: labour.phone,
+        skill: labour.skill,
+        experience: labour.experience,
+        isApproved: labour.isApproved,
+        rating: labour.rating,
+        role: "labour",
+        token: generateToken(labour._id, "labour"),
+      });
+    } else {
+      res.json({
+        _id: vendor._id,
+        businessName: vendor.businessName,
+        ownerName: vendor.ownerName,
+        email: vendor.email,
+        phone: vendor.phone,
+        category: vendor.category,
+        status: vendor.status,
+        token: generateToken(vendor._id, "vendor"),
+        role: "vendor",
+      });
+    }
   } catch (error) {
     console.error("Login vendor error:", error);
     res.status(500).json({ message: error.message });
@@ -230,4 +359,11 @@ const updateVendorProfile = async (req, res) => {
   }
 };
 
-module.exports = { registerVendor, loginVendor, getVendorProfile, updateVendorProfile };
+module.exports = { 
+  sendVendorOTP,
+  verifyVendorOTP,
+  registerVendor, 
+  loginVendor, 
+  getVendorProfile, 
+  updateVendorProfile 
+};

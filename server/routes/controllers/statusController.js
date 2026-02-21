@@ -1,5 +1,6 @@
 import Booking from "../models/Booking.js";
 import Order from "../models/Order.js";
+const { createNotification } = require('../../controllers/notificationController');
 
 // ==================== BOOKING STATUS UPDATES ====================
 
@@ -72,6 +73,25 @@ const updateBookingStatus = async (req, res) => {
     // Update status
     booking.status = status;
     await booking.save();
+
+    // Create notification for user
+    const statusMessages = {
+      'In Progress': 'Your booking is now in progress.',
+      'Completed': 'Your booking has been completed.',
+      'Cancelled': 'Your booking has been cancelled.',
+    };
+    
+    if (statusMessages[status]) {
+      await createNotification({
+        user: booking.user._id,
+        type: 'booking',
+        title: `Booking ${status}`,
+        message: statusMessages[status],
+        link: `/my-bookings/${booking._id}`,
+        relatedBooking: booking._id,
+        priority: status === 'Completed' ? 'high' : 'medium',
+      });
+    }
 
     res.json({
       success: true,
@@ -195,6 +215,28 @@ const updateOrderStatus = async (req, res) => {
     });
 
     await order.save();
+
+    // Create notification for user
+    const statusMessages = {
+      'In Progress': 'Your order is now being prepared.',
+      'Out for Delivery': 'Your order is out for delivery.',
+      'Ready for Pickup': 'Your order is ready for pickup.',
+      'Delivered': 'Your order has been delivered.',
+      'Completed': 'Your order has been completed.',
+      'Cancelled': 'Your order has been cancelled.',
+    };
+    
+    if (statusMessages[status]) {
+      await createNotification({
+        user: order.user._id,
+        type: 'order',
+        title: `Order ${status}`,
+        message: statusMessages[status],
+        link: `/my-orders/${order._id}`,
+        relatedOrder: order._id,
+        priority: ['Delivered', 'Ready for Pickup', 'Out for Delivery'].includes(status) ? 'high' : 'medium',
+      });
+    }
 
     res.json({
       success: true,

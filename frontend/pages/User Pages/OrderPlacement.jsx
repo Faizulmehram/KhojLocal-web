@@ -82,12 +82,15 @@ export default function OrderPlacement() {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
+      const userStr = localStorage.getItem("user");
+      if (!userStr) {
         alert("Please login to place an order");
         navigate("/");
         return;
       }
+
+      const user = JSON.parse(userStr);
+      const token = user.token;
 
       const orderData = {
         vendorId: vendor?._id,
@@ -100,7 +103,7 @@ export default function OrderPlacement() {
         orderType,
         deliveryAddress: orderType === "Delivery" ? deliveryAddress : undefined,
         specialInstructions,
-        paymentMethod,
+        paymentMethod: paymentMethod === "Stripe" ? "Stripe" : paymentMethod,
       };
 
       const response = await axios.post(
@@ -114,6 +117,24 @@ export default function OrderPlacement() {
       );
 
       if (response.data.success) {
+        const orderId = response.data.order._id;
+
+        // If Stripe payment, create checkout session
+        if (paymentMethod === "Stripe") {
+          const stripeResponse = await axios.post(
+            "http://localhost:5000/api/stripe/create-checkout-session/order",
+            { orderId },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+
+          if (stripeResponse.data.url) {
+            // Redirect to Stripe checkout
+            window.location.href = stripeResponse.data.url;
+            return;
+          }
+        }
+
+        // For Prepaid and Pay-On-Delivery
         alert("Order placed successfully! The vendor will be notified.");
         navigate("/my-orders");
       }
@@ -282,10 +303,10 @@ export default function OrderPlacement() {
             {/* Payment Method */}
             <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200">
               <h2 className="text-lg sm:text-xl font-bold mb-4">Payment Method</h2>
-              <div className="flex gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <button
                   onClick={() => setPaymentMethod("Prepaid")}
-                  className={`flex-1 py-3 px-4 rounded-lg font-medium transition ${
+                  className={`py-3 px-4 rounded-lg font-medium transition ${
                     paymentMethod === "Prepaid"
                       ? "bg-indigo-600 text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -295,13 +316,23 @@ export default function OrderPlacement() {
                 </button>
                 <button
                   onClick={() => setPaymentMethod("Pay-On-Delivery")}
-                  className={`flex-1 py-3 px-4 rounded-lg font-medium transition ${
+                  className={`py-3 px-4 rounded-lg font-medium transition ${
                     paymentMethod === "Pay-On-Delivery"
                       ? "bg-indigo-600 text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
                   Pay on Delivery
+                </button>
+                <button
+                  onClick={() => setPaymentMethod("Stripe")}
+                  className={`py-3 px-4 rounded-lg font-medium transition ${
+                    paymentMethod === "Stripe"
+                      ? "bg-indigo-600 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  Pay with Card
                 </button>
               </div>
             </div>

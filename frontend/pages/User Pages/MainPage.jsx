@@ -1,23 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Utensils, Sparkles, Home as HomeIcon, ShoppingBag, Star } from 'lucide-react';
+import { Utensils, Sparkles, Home as HomeIcon, ShoppingBag, Star, Users } from 'lucide-react';
 import Navbar from '../../components/Navbar';
+import LabourCard from '../../components/LabourCard';
+import VendorCard from '../../components/VendorCard';
 import axios from 'axios';
 
 export default function MainPage() {
   const navigate = useNavigate();
   const [recommendedVendors, setRecommendedVendors] = useState([]);
+  const [labourWorkers, setLabourWorkers] = useState([]);
   const [filteredVendors, setFilteredVendors] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchRecommendedVendors();
+    fetchLabourWorkers();
   }, []);
 
   useEffect(() => {
     filterVendorsByCategory();
-  }, [selectedCategory, recommendedVendors]);
+  }, [selectedCategory, recommendedVendors, labourWorkers]);
 
   const fetchRecommendedVendors = async () => {
     try {
@@ -34,9 +38,47 @@ export default function MainPage() {
     }
   };
 
+  const fetchLabourWorkers = async () => {
+    try {
+      console.log('Fetching labour workers from API...');
+      const response = await axios.get('http://localhost:5000/api/labour/all?isApproved=true');
+      console.log('Labour workers response:', response.data);
+      
+      // The API returns { success, count, labour: [...] }
+      const labourData = response.data.labour || [];
+      
+      // Transform labour workers to match vendor format for display
+      const transformedLabour = labourData.map(labour => ({
+        _id: labour._id,
+        businessName: `${labour.userId?.name || labour.fullName} - ${labour.tradeCategory || labour.skill}`,
+        category: 'Labour',
+        description: labour.tradeDescription || labour.bio || `${labour.tradeCategory || labour.skill} professional with ${labour.experience || 0} years experience`,
+        rating: labour.rating || 0,
+        totalReviews: labour.totalReviews || 0,
+        images: {
+          logo: labour.profileImage || 'https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=400',
+          banner: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800',
+        },
+        phone: labour.userId?.phone || labour.phone,
+        experience: labour.experience,
+        tradeCategory: labour.tradeCategory || labour.skill,
+        isLabour: true, // Flag to identify labour workers
+      }));
+      
+      setLabourWorkers(transformedLabour);
+      console.log('Transformed labour workers:', transformedLabour.length);
+    } catch (error) {
+      console.error('Error fetching labour workers:', error);
+      console.error('Labour error details:', error.response?.data || error.message);
+    }
+  };
+
   const filterVendorsByCategory = () => {
     if (selectedCategory === 'all') {
-      setFilteredVendors(recommendedVendors.slice(0, 10));
+      const combined = [...recommendedVendors, ...labourWorkers];
+      setFilteredVendors(combined.slice(0, 10));
+    } else if (selectedCategory === 'Labour') {
+      setFilteredVendors(labourWorkers);
     } else {
       const filtered = recommendedVendors.filter(v => v.category === selectedCategory);
       setFilteredVendors(filtered);
@@ -48,9 +90,10 @@ export default function MainPage() {
   };
 
   const categories = [
-    { name: 'All Categories', value: 'all', icon: ShoppingBag, desc: 'Show all businesses' },
+    { name: 'All Categories', value: 'all', icon: ShoppingBag, desc: 'Show all services' },
     { name: 'Restaurant', value: 'Restaurant', icon: Utensils, desc: 'Dining & food services' },
     { name: 'Bakery', value: 'Bakery', icon: Utensils, desc: 'Fresh baked goods' },
+    { name: 'Labour', value: 'Labour', icon: Users, desc: 'Skilled workers & professionals' },
     { name: 'Salon', value: 'Salon', icon: Sparkles, desc: 'Hair & beauty services' },
     { name: 'Spa', value: 'Spa', icon: Sparkles, desc: 'Wellness & relaxation' },
     { name: 'Gym', value: 'Gym', icon: Sparkles, desc: 'Fitness & training' },
@@ -206,10 +249,14 @@ export default function MainPage() {
             <div>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold">
-                  {selectedCategory === 'all' ? 'Recommended For You' : `${selectedCategory} Services`}
+                  {selectedCategory === 'all' ? 'Recommended For You' : 
+                   selectedCategory === 'Labour' ? 'Available Workers' : 
+                   `${selectedCategory} Services`}
                 </h2>
                 <span className="text-sm text-gray-500">
-                  {filteredVendors.length} {filteredVendors.length === 1 ? 'business' : 'businesses'}
+                  {filteredVendors.length} {selectedCategory === 'Labour' ? 
+                    (filteredVendors.length === 1 ? 'worker' : 'workers') : 
+                    (filteredVendors.length === 1 ? 'business' : 'businesses')}
                 </span>
               </div>
               {loading ? (
@@ -220,74 +267,20 @@ export default function MainPage() {
                 <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
                   <p className="text-gray-500">
                     {selectedCategory === 'all' 
-                      ? 'No approved vendors available yet.' 
+                      ? 'No services available yet.' 
+                      : selectedCategory === 'Labour'
+                      ? 'No workers available in this category yet.'
                       : `No ${selectedCategory} businesses available yet.`}
                   </p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {filteredVendors.map((vendor, idx) => (
-                    <div
-                      key={vendor._id}
-                      className="flex flex-col sm:flex-row gap-4 p-4 rounded-2xl border bg-white border-gray-200 hover:shadow-lg transition"
-                    >
-                      {vendor.images?.logo ? (
-                        <img
-                          src={vendor.images.logo}
-                          alt={vendor.businessName}
-                          className="w-full sm:w-32 h-32 object-cover rounded-xl"
-                        />
-                      ) : (
-                        <div className="w-full sm:w-32 h-32 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white text-4xl font-bold">
-                          {vendor.businessName?.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <p className="text-xs text-indigo-600 font-medium uppercase mb-1">{vendor.category}</p>
-                            <h3 className="text-lg font-bold">{vendor.businessName}</h3>
-                            <p className="text-sm text-gray-600 mt-1">{vendor.description || 'Quality service provider'}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between mt-4">
-                          <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-1">
-                              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                              <span className="text-sm font-medium">{vendor.rating || 4.5}</span>
-                              <span className="text-xs text-gray-500">({vendor.reviewCount || 0} reviews)</span>
-                            </div>
-                            {vendor.address?.city && (
-                              <span className="text-xs text-gray-500">{vendor.address.city}</span>
-                            )}
-                          </div>
-                          <div className="flex gap-2">
-                            {(vendor.serviceType === "ordering" || vendor.serviceType === "both") && (
-                              <button 
-                                onClick={() => navigate(`/order`, { state: { vendor: vendor } })}
-                                className="px-3 py-2 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition active:scale-95"
-                              >
-                                Order
-                              </button>
-                            )}
-                            {(vendor.serviceType === "booking" || vendor.serviceType === "both") && (
-                              <button 
-                                onClick={() => navigate(`/booking`, { state: { vendor: vendor } })}
-                                className="px-3 py-2 text-xs font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700 transition active:scale-95"
-                              >
-                                Book
-                              </button>
-                            )}
-                            <button 
-                              onClick={() => navigate(`/business/${vendor._id}`, { state: { business: vendor } })}
-                              className="px-3 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition active:scale-95"
-                            >
-                              Details
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                  {filteredVendors.map((item, idx) => (
+                    item.isLabour ? (
+                      <LabourCard key={item._id} labour={item} />
+                    ) : (
+                      <VendorCard key={item._id} vendor={item} />
+                    )
                   ))}
                 </div>
               )}

@@ -4,6 +4,8 @@ const router = express.Router();
 const { protect } = require("../middleware/authMiddleware");
 
 const {
+  sendVendorOTP,
+  verifyVendorOTP,
   registerVendor,
   loginVendor,
   getVendorProfile,
@@ -13,7 +15,9 @@ const { acceptBooking, acceptOrder, getPendingBookings, getPendingOrders, getVen
 const { getActiveBookings, getActiveOrders, updateBookingStatus, updateDeliveryTime, updateOrderStatus } = require("../controllers/statusController");
 const { getVendorPayments, processRefund } = require("../controllers/paymentController");
 
-// Public routes
+// Public routes - OTP verification
+router.post("/send-otp", sendVendorOTP);
+router.post("/verify-otp", verifyVendorOTP);
 router.post("/register", registerVendor);
 router.post("/login", loginVendor);
 

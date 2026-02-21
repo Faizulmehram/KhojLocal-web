@@ -61,8 +61,14 @@ const orderSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ["Prepaid", "Pay-On-Delivery"],
+    enum: ["Prepaid", "Pay-On-Delivery", "Stripe"],
     default: "Prepaid",
+  },
+  stripeSessionId: {
+    type: String,
+  },
+  stripePaymentIntentId: {
+    type: String,
   },
   paymentStatus: {
     type: String,

@@ -20,6 +20,10 @@ import UserBookings from './pages/User Pages/UserBookings';
 import UserOrders from './pages/User Pages/UserOrders';
 import OrderPlacement from './pages/User Pages/OrderPlacement';
 import UserMessages from './pages/User Pages/User-Messages';
+import Notifications from './pages/User Pages/Notifications';
+import PaymentSuccess from './pages/User Pages/PaymentSuccess';
+import LabourBooking from './pages/User Pages/LabourBooking';
+import LabourProfile from './pages/User Pages/LabourProfile';
 import VendorReg from './pages/Vendor Pages/VendorReg.jsx';
 import LabourReg from './pages/Vendor Pages/LabourReg.jsx';
 import VendorDashboard from './pages/Vendor Pages/VendorDashboard.jsx';
@@ -60,6 +64,10 @@ function App() {
         <Route path="/my-orders" element={<UserOrders />} />
         <Route path="/order" element={<OrderPlacement />} />
         <Route path="/messages" element={<UserMessages />} />
+        <Route path="/notifications" element={<Notifications />} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/labour-booking" element={<LabourBooking />} />
+        <Route path="/labour/:id" element={<LabourProfile />} />
         
         {/* Vendor Routes */}
         <Route path="/vendor-register" element={<VendorReg />} />

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Bell, Menu, X, MapPin, MessageSquare } from 'lucide-react';
+import { Search, Menu, X, MapPin, MessageSquare } from 'lucide-react';
+import NotificationDropdown from './NotificationDropdown';
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -62,9 +63,7 @@ export default function Navbar() {
               <a onClick={() => navigate('/messages')} className="text-sm font-medium hover:text-teal-600 cursor-pointer">Messages</a>
             </nav>
 
-            <button className="p-2 rounded-md hover:bg-gray-100" aria-label="Notifications">
-              <Bell className="h-5 w-5" />
-            </button>
+            <NotificationDropdown />
 
             <button onClick={() => navigate('/messages')} className="md:hidden p-2 rounded-md hover:bg-gray-100" aria-label="Messages">
               <MessageSquare className="h-5 w-5" />

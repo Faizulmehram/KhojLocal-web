@@ -20,6 +20,8 @@ const labourRoutes = require('./routes/labourRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const adminManagementRoutes = require('./routes/adminManagementRoutes');
 const publicRoutes = require('./routes/publicRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const stripeRoutes = require('./routes/stripeRoutes');
 
 // API Routes
 app.use('/api/auth/user', userRoutes);
@@ -28,6 +30,10 @@ app.use('/api/labour', labourRoutes);
 app.use('/api/auth/admin', adminRoutes);
 app.use('/api/admin', adminManagementRoutes);
 app.use('/api/vendors', publicRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/stripe', stripeRoutes);
+
+console.log('✅ All routes registered successfully');
 
 // Health check
 app.get('/api/health', (req, res) => {

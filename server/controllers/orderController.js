@@ -1,5 +1,6 @@
 const Order = require("../models/Order");
 const Vendor = require("../models/Vendor");
+const { createNotification } = require('./notificationController');
 
 // @desc    Create a new order
 // @route   POST /api/orders
@@ -87,6 +88,17 @@ const createOrder = async (req, res) => {
 
     // Populate vendor details
     await order.populate("vendor", "businessName email phone category");
+
+    // Create notification for user
+    await createNotification({
+      user: req.user._id,
+      type: 'order',
+      title: 'Order Placed Successfully',
+      message: `Your order #${order.orderNumber || order._id.toString().slice(-6)} has been placed and is awaiting vendor confirmation.`,
+      link: `/my-orders/${order._id}`,
+      relatedOrder: order._id,
+      priority: 'medium',
+    });
 
     res.status(201).json({
       success: true,
@@ -205,6 +217,17 @@ const cancelOrder = async (req, res) => {
     });
 
     await order.save();
+
+    // Create notification for user
+    await createNotification({
+      user: req.user._id,
+      type: 'order',
+      title: 'Order Cancelled',
+      message: `Your order #${order.orderNumber || order._id.toString().slice(-6)} has been cancelled.`,
+      link: `/my-orders/${order._id}`,
+      relatedOrder: order._id,
+      priority: 'medium',
+    });
 
     res.json({
       success: true,

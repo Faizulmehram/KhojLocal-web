@@ -1,38 +1,60 @@
 const Booking = require("../models/Booking");
 const Vendor = require("../models/Vendor");
+const { createNotification } = require('./notificationController');
 
 // @desc    Create a new booking
 // @route   POST /api/bookings
 // @access  Private (User)
 const createBooking = async (req, res) => {
   try {
+    console.log('=== Creating Booking ===');
+    console.log('User:', req.user);
+    console.log('Request body:', req.body);
+
+    // Check if user is authenticated
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        message: "User not authenticated",
+      });
+    }
+
     const {
       vendorId,
+      labourId,
       serviceType,
       bookingDate,
       bookingTime,
       duration,
       notes,
       paymentMethod,
+      workDescription,
+      estimatedHours,
     } = req.body;
 
+    // Handle both vendor and labour bookings
+    const resourceId = vendorId || labourId;
+    const isLabourBooking = !!labourId;
+
     // Validation
-    if (!vendorId || !serviceType || !bookingDate || !bookingTime) {
+    if (!resourceId || !serviceType || !bookingDate || !bookingTime) {
       return res.status(400).json({
         message: "Please provide all required fields",
       });
     }
 
-    // Check if vendor exists and is active
-    const vendor = await Vendor.findById(vendorId);
-    if (!vendor) {
-      return res.status(404).json({ message: "Vendor not found" });
-    }
+    // Check if vendor exists and is active (skip for labour bookings)
+    let vendor = null;
+    if (!isLabourBooking) {
+      vendor = await Vendor.findById(resourceId);
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor not found" });
+      }
 
-    if (vendor.status !== "Approved" || !vendor.isActive) {
-      return res.status(403).json({
-        message: "This vendor is not available for bookings",
-      });
+      if (vendor.status !== "Approved" || !vendor.isActive) {
+        return res.status(403).json({
+          message: "This vendor is not available for bookings",
+        });
+      }
     }
 
     // BR-12: Booking must be at least 1 hour in advance and ≤ 30 days
@@ -79,6 +101,20 @@ const createBooking = async (req, res) => {
       });
     }
 
+    // Parse duration/estimatedHours - handle strings like "2-4" or "2-4 hours"
+    let durationInMinutes = 60; // default
+    if (estimatedHours) {
+      // Extract first number from strings like "2-4", "2-4 hours", "Under 1 hour"
+      const match = String(estimatedHours).match(/(\d+)/);
+      if (match) {
+        durationInMinutes = parseInt(match[1]) * 60; // convert hours to minutes
+      } else if (String(estimatedHours).toLowerCase().includes('under')) {
+        durationInMinutes = 30; // "Under 1 hour" = 30 minutes
+      }
+    } else if (duration) {
+      durationInMinutes = parseInt(duration) || 60;
+    }
+
     // Calculate pricing (simplified - should be fetched from service pricing)
     const basePrice = 50; // This should come from vendor's service pricing
     const platformFee = basePrice * 0.1; // 10% platform fee
@@ -89,24 +125,55 @@ const createBooking = async (req, res) => {
     const autoRejectAt = new Date(Date.now() + 2 * 60 * 60 * 1000);
 
     // Create booking
-    const booking = await Booking.create({
+    const bookingData = {
       user: req.user._id,
-      vendor: vendorId,
+      vendor: resourceId, // Works for both vendor and labour (stored in vendor field)
       serviceType,
       bookingDate: requestedDate,
       bookingTime,
-      duration: duration || 60,
-      notes,
+      duration: durationInMinutes,
+      notes: workDescription || notes,
       paymentMethod: paymentMethod || "Prepaid",
       totalAmount,
       platformFee,
       tax,
       status: "Pending Vendor Confirmation", // All bookings start pending vendor confirmation
       autoRejectAt,
-    });
+    };
 
-    // Populate vendor details
-    await booking.populate("vendor", "businessName email phone");
+    const booking = await Booking.create(bookingData);
+
+    // Populate details - handle both vendor and labour
+    if (isLabourBooking) {
+      // For labour bookings, vendor field contains Labour ID
+      const Labour = require("../models/Labour");
+      const User = require("../models/User");
+      
+      const labour = await Labour.findById(resourceId).select("userId fullName phone email");
+      if (labour) {
+        // Create vendor-like object for consistency
+        booking.vendor = {
+          _id: labour._id,
+          businessName: labour.fullName,
+          email: labour.email,
+          phone: labour.phone,
+        };
+      }
+    } else {
+      await booking.populate("vendor", "businessName email phone");
+    }
+
+    // Create notification for user
+    const vendorName = booking.vendor?.businessName || "the service provider";
+    await createNotification({
+      user: req.user._id,
+      type: 'booking',
+      title: 'Booking Placed Successfully',
+      message: `Your booking with ${vendorName} for ${bookingDate} at ${bookingTime} has been placed and is awaiting confirmation.`,
+      link: `/my-bookings/${booking._id}`,
+      relatedBooking: booking._id,
+      priority: 'medium',
+    });
 
     res.status(201).json({
       success: true,
@@ -115,7 +182,11 @@ const createBooking = async (req, res) => {
     });
   } catch (error) {
     console.error("Create booking error:", error);
-    res.status(500).json({ message: error.message });
+    console.error("Error stack:", error.stack);
+    res.status(500).json({ 
+      message: error.message,
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 

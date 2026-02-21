@@ -1,16 +1,29 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
 const labourSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: false, // Make optional since we'll use email/password
     },
     fullName: {
       type: String,
       required: true,
       trim: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+    },
+    password: {
+      type: String,
+      required: true,
+      select: false, // Don't return password by default
     },
     phone: {
       type: String,
@@ -23,16 +36,11 @@ const labourSchema = new mongoose.Schema(
     },
     phoneVerificationCode: {
       type: String,
-      select: false, // Don't return in queries by default
+      select: false,
     },
     phoneVerificationExpiry: {
       type: Date,
       select: false,
-    },
-    email: {
-      type: String,
-      trim: true,
-      lowercase: true,
     },
     cnicNumber: {
       type: String,
@@ -145,6 +153,22 @@ const labourSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// Hash password before saving
+labourSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) {
+    return next();
+  }
+  
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
+
+// Method to compare passwords
+labourSchema.methods.comparePassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
 
 // Create geospatial index for location-based queries
 labourSchema.index({ "serviceArea.coordinates": "2dsphere" });

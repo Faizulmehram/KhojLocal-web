@@ -288,6 +288,16 @@ const acceptOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
 
+    console.log('=== ACCEPT ORDER ===');
+    console.log('Order ID:', req.params.id);
+    console.log('Order found:', !!order);
+    if (order) {
+      console.log('Order status:', order.status);
+      console.log('Order vendor:', order.vendor.toString());
+      console.log('Request vendor:', req.user._id.toString());
+      console.log('Payment method:', order.paymentMethod);
+    }
+
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
@@ -300,17 +310,37 @@ const acceptOrder = async (req, res) => {
     }
 
     // Check if order is in correct status
-    if (order.status !== "Pending Vendor Confirmation") {
+    if (order.status !== "Pending Vendor Confirmation" && order.status !== "Pending Payment") {
+      console.log('ERROR: Order status is not valid for acceptance, it is:', order.status);
       return res.status(400).json({
-        message: "This order cannot be accepted",
+        message: `This order cannot be accepted. Current status: ${order.status}`,
       });
     }
 
-    // Accept order
-    order.status =
-      order.paymentMethod === "Pay-On-Delivery"
-        ? "Confirmed"
-        : "Pending Payment";
+    // For Pending Payment orders, verify payment is actually completed
+    if (order.status === "Pending Payment" && order.paymentMethod === "Stripe") {
+      if (order.paymentStatus !== "Paid") {
+        return res.status(400).json({
+          message: "Cannot accept order - payment has not been completed yet",
+        });
+      }
+    }
+
+    // Accept order based on payment method
+    if (order.paymentMethod === "Stripe") {
+      // For Stripe orders, check payment status
+      if (order.paymentStatus !== "Paid") {
+        order.status = "Pending Payment";
+      } else {
+        order.status = "Confirmed";
+      }
+    } else if (order.paymentMethod === "Pay-On-Delivery") {
+      order.status = "Confirmed";
+    } else {
+      // Prepaid
+      order.status = "Pending Payment";
+    }
+
     order.vendorResponse = {
       respondedAt: Date.now(),
       action: "Accepted",
@@ -323,6 +353,8 @@ const acceptOrder = async (req, res) => {
 
     await order.save();
     await order.populate("user", "name email phone");
+
+    console.log('Order accepted successfully, new status:', order.status);
 
     res.json({
       success: true,

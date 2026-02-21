@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Admin = require('./models/Admin');
 const User = require('./models/User');
 const Vendor = require('./models/Vendor');
+const Labour = require('./models/Labour');
 require('dotenv').config();
 
 const connectDB = async () => {
@@ -23,6 +24,7 @@ const seedData = async () => {
     await Admin.deleteMany({});
     await User.deleteMany({});
     await Vendor.deleteMany({});
+    await Labour.deleteMany({});
 
     // Create Admin Account
     console.log('👤 Creating admin account...');
@@ -107,6 +109,7 @@ const seedData = async () => {
         totalReviews: 128,
         approvedAt: new Date(),
         approvedBy: admin._id,
+        serviceType: 'both',
       },
       {
         businessName: 'Fitness First Gym',
@@ -147,6 +150,7 @@ const seedData = async () => {
         totalReviews: 95,
         approvedAt: new Date(),
         approvedBy: admin._id,
+        serviceType: 'booking',
       },
       {
         businessName: 'Bella Hair Salon',
@@ -187,6 +191,89 @@ const seedData = async () => {
         totalReviews: 76,
         approvedAt: new Date(),
         approvedBy: admin._id,
+        serviceType: 'booking',
+      },
+      {
+        businessName: 'Sweet Delights Bakery',
+        ownerName: 'Maria Santos',
+        email: 'maria@sweetdelights.com',
+        password: 'vendor123',
+        phone: '1231231234',
+        category: 'Bakery',
+        address: {
+          street: '100 Baker Street',
+          city: 'Springfield',
+          state: 'IL',
+          zipCode: '62709',
+          country: 'USA',
+        },
+        description: 'Fresh breads, pastries, and custom cakes made daily',
+        images: {
+          logo: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400',
+          banner: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=800',
+          gallery: [
+            'https://images.unsplash.com/photo-1517433670267-08bbd4be890f?w=400',
+            'https://images.unsplash.com/photo-1486427944299-d1955d23e34d?w=400',
+          ],
+        },
+        services: ['Fresh Bread', 'Custom Cakes', 'Pastries', 'Wedding Cakes', 'Catering'],
+        businessHours: {
+          monday: { open: '06:00', close: '19:00', isClosed: false },
+          tuesday: { open: '06:00', close: '19:00', isClosed: false },
+          wednesday: { open: '06:00', close: '19:00', isClosed: false },
+          thursday: { open: '06:00', close: '19:00', isClosed: false },
+          friday: { open: '06:00', close: '20:00', isClosed: false },
+          saturday: { open: '07:00', close: '20:00', isClosed: false },
+          sunday: { open: '07:00', close: '17:00', isClosed: false },
+        },
+        status: 'Approved',
+        isActive: true,
+        rating: 4.7,
+        totalReviews: 156,
+        approvedAt: new Date(),
+        approvedBy: admin._id,
+        serviceType: 'both',
+      },
+      {
+        businessName: 'Artisan Bread Co',
+        ownerName: 'Thomas Baker',
+        email: 'thomas@artisanbread.com',
+        password: 'vendor123',
+        phone: '3213213211',
+        category: 'Bakery',
+        address: {
+          street: '456 Flour Avenue',
+          city: 'Springfield',
+          state: 'IL',
+          zipCode: '62710',
+          country: 'USA',
+        },
+        description: 'Handcrafted artisan breads and European pastries',
+        images: {
+          logo: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400',
+          banner: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800',
+          gallery: [
+            'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=400',
+            'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=400',
+          ],
+        },
+        services: ['Sourdough Bread', 'Croissants', 'Danish Pastries', 'Baguettes', 'Wholesale'],
+        businessHours: {
+          monday: { open: '07:00', close: '18:00', isClosed: false },
+          tuesday: { open: '07:00', close: '18:00', isClosed: false },
+          wednesday: { open: '07:00', close: '18:00', isClosed: false },
+          thursday: { open: '07:00', close: '18:00', isClosed: false },
+          friday: { open: '07:00', close: '18:00', isClosed: false },
+          saturday: { open: '07:00', close: '17:00', isClosed: false },
+          sunday: { open: '08:00', close: '15:00', isClosed: false },
+        },
+        status: 'Approved',
+        isActive: true,
+        rating: 4.8,
+        totalReviews: 112,
+        approvedAt: new Date(),
+        approvedBy: admin._id,
+        serviceType: 'ordering',
       },
       {
         businessName: 'Tech Repair Pro',
@@ -222,6 +309,7 @@ const seedData = async () => {
         isActive: true,
         rating: 0,
         totalReviews: 0,
+        serviceType: 'booking',
       },
       {
         businessName: 'Spice Garden Restaurant',
@@ -262,6 +350,7 @@ const seedData = async () => {
         totalReviews: 142,
         approvedAt: new Date(),
         approvedBy: admin._id,
+        serviceType: 'both',
       },
       {
         businessName: 'Downtown Dental Care',
@@ -302,6 +391,7 @@ const seedData = async () => {
         totalReviews: 203,
         approvedAt: new Date(),
         approvedBy: admin._id,
+        serviceType: 'booking',
       },
       {
         businessName: 'Pet Paradise Grooming',
@@ -342,6 +432,7 @@ const seedData = async () => {
         totalReviews: 87,
         approvedAt: new Date(),
         approvedBy: admin._id,
+        serviceType: 'booking',
       },
       {
         businessName: 'Elite Auto Repair',
@@ -377,9 +468,207 @@ const seedData = async () => {
         isActive: true,
         rating: 0,
         totalReviews: 0,
+        serviceType: 'booking',
       },
     ]);
-    console.log(`✅ ${vendors.length} vendors created`);
+
+    // Create Sample Labour Workers
+    console.log('👷 Creating sample labour workers...');
+    
+    // Labour workers now have their own email/password (no longer need user accounts)
+    const labourWorkers = await Labour.insertMany([
+      {
+        fullName: 'Mazdoor',
+        email: 'mazdoor@gmail.com',
+        password: '11221122',
+        phone: '3001112222',
+        cnicNumber: '35201-1234567-1',
+        skill: 'Driver',
+        experience: 4,
+        availability: {
+          days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+          hours: '8am - 6pm',
+        },
+        bio: 'Professional driver with experience in local and intercity routes.',
+        documents: {
+          cnicFront: '/uploads/labour/cnic/sample-front.jpg',
+          cnicBack: '/uploads/labour/cnic/sample-back.jpg',
+          selfie: '/uploads/labour/selfie/sample-selfie.jpg',
+        },
+        serviceArea: {
+          type: 'Point',
+          coordinates: [73.0479, 33.6844],
+          latitude: 33.6844,
+          longitude: 73.0479,
+          address: 'Islamabad, Pakistan',
+          radius: 20,
+        },
+        verificationStatus: 'approved',
+        isApproved: true,
+        rating: 4.5,
+        totalReviews: 18,
+        verifiedAt: new Date(),
+      },
+      {
+        fullName: 'Ahmed Khan',
+        email: 'ahmed.plumber@khoojlocal.com',
+        password: 'labour123',
+        phone: '3001234567',
+        cnicNumber: '35202-1234567-1',
+        skill: 'Plumber',
+        experience: 8,
+        availability: {
+          days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+          hours: '9am - 5pm',
+        },
+        bio: 'Professional plumber specializing in pipe installation, repairs, and maintenance.',
+        documents: {
+          cnicFront: '/uploads/labour/cnic/sample-front.jpg',
+          cnicBack: '/uploads/labour/cnic/sample-back.jpg',
+          selfie: '/uploads/labour/selfie/sample-selfie.jpg',
+        },
+        serviceArea: {
+          type: 'Point',
+          coordinates: [73.0479, 33.6844],
+          latitude: 33.6844,
+          longitude: 73.0479,
+          address: 'Islamabad, Pakistan',
+          radius: 20,
+        },
+        verificationStatus: 'approved',
+        isApproved: true,
+        rating: 4.7,
+        totalReviews: 34,
+        verifiedAt: new Date(),
+      },
+      {
+        fullName: 'Hassan Ali',
+        email: 'hassan.electrician@khoojlocal.com',
+        password: 'labour123',
+        phone: '3009876543',
+        cnicNumber: '35202-1234567-2',
+        skill: 'Electrician',
+        experience: 10,
+        availability: {
+          days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+          hours: '8am - 6pm',
+        },
+        bio: 'Certified electrician for all types of electrical work and repairs. Licensed electrician with expertise in wiring and electrical installations.',
+        documents: {
+          cnicFront: '/uploads/labour/cnic/sample-front.jpg',
+          cnicBack: '/uploads/labour/cnic/sample-back.jpg',
+          selfie: '/uploads/labour/selfie/sample-selfie.jpg',
+        },
+        serviceArea: {
+          type: 'Point',
+          coordinates: [73.0479, 33.6844],
+          latitude: 33.6844,
+          longitude: 73.0479,
+          address: 'Islamabad, Pakistan',
+          radius: 20,
+        },
+        verificationStatus: 'approved',
+        isApproved: true,
+        rating: 4.9,
+        totalReviews: 56,
+      },
+      {
+        fullName: 'Bilal Mahmood',
+        email: 'bilal.carpenter@khoojlocal.com',
+        password: 'labour123',
+        phone: '3005551234',
+        cnicNumber: '35202-1234567-3',
+        skill: 'Carpenter',
+        experience: 6,
+        availability: {
+          days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+          hours: '9am - 5pm',
+        },
+        bio: 'Expert carpenter for custom furniture and home woodwork projects. Skilled carpenter specializing in furniture making and woodwork.',
+        documents: {
+          cnicFront: '/uploads/labour/cnic/sample-front.jpg',
+          cnicBack: '/uploads/labour/cnic/sample-back.jpg',
+          selfie: '/uploads/labour/selfie/sample-selfie.jpg',
+        },
+        serviceArea: {
+          type: 'Point',
+          coordinates: [73.0479, 33.6844],
+          latitude: 33.6844,
+          longitude: 73.0479,
+          address: 'Islamabad, Pakistan',
+          radius: 10,
+        },
+        verificationStatus: 'approved',
+        isApproved: true,
+        rating: 4.6,
+        totalReviews: 28,
+      },
+      {
+        fullName: 'Tariq Hussain',
+        email: 'tariq.painter@khoojlocal.com',
+        password: 'labour123',
+        phone: '3007778888',
+        cnicNumber: '35202-1234567-4',
+        skill: 'Painter',
+        experience: 5,
+        availability: {
+          days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+          hours: '8am - 4pm',
+        },
+        bio: 'Quality painting services for homes and commercial spaces. Professional painter for interior and exterior painting services.',
+        documents: {
+          cnicFront: '/uploads/labour/cnic/sample-front.jpg',
+          cnicBack: '/uploads/labour/cnic/sample-back.jpg',
+          selfie: '/uploads/labour/selfie/sample-selfie.jpg',
+        },
+        serviceArea: {
+          type: 'Point',
+          coordinates: [73.0479, 33.6844],
+          latitude: 33.6844,
+          longitude: 73.0479,
+          address: 'Islamabad, Pakistan',
+          radius: 12,
+        },
+        verificationStatus: 'approved',
+        isApproved: true,
+        rating: 4.5,
+        totalReviews: 22,
+        verifiedAt: new Date(),
+      },
+      {
+        fullName: 'Rashid Malik',
+        email: 'rashid.mason@khoojlocal.com',
+        password: 'labour123',
+        phone: '3004443333',
+        cnicNumber: '35202-1234567-5',
+        skill: 'Mason',
+        experience: 12,
+        availability: {
+          days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+          hours: '7am - 5pm',
+        },
+        bio: 'Master mason with extensive experience in residential and commercial construction. Experienced mason for construction and brick work.',
+        documents: {
+          cnicFront: '/uploads/labour/cnic/sample-front.jpg',
+          cnicBack: '/uploads/labour/cnic/sample-back.jpg',
+          selfie: '/uploads/labour/selfie/sample-selfie.jpg',
+        },
+        serviceArea: {
+          type: 'Point',
+          coordinates: [73.0479, 33.6844],
+          latitude: 33.6844,
+          longitude: 73.0479,
+          address: 'Islamabad, Pakistan',
+          radius: 25,
+        },
+        verificationStatus: 'approved',
+        isApproved: true,
+        rating: 4.8,
+        totalReviews: 45,
+        verifiedAt: new Date(),
+      },
+    ]);
+    console.log(`✅ ${labourWorkers.length} labour workers created`);
 
     console.log('\n📊 DATABASE SEEDED SUCCESSFULLY!\n');
     console.log('=== LOGIN CREDENTIALS ===');
@@ -389,18 +678,30 @@ const seedData = async () => {
     console.log('\n👤 SAMPLE USER LOGIN:');
     console.log('   Email: john@example.com');
     console.log('   Password: password123');
-    console.log('\n🏪 APPROVED VENDORS (6):');
+    console.log('\n🏪 APPROVED VENDORS (8):');
     console.log('   - The Gourmet Kitchen (Restaurant)');
     console.log('   - Fitness First Gym (Gym)');
     console.log('   - Bella Hair Salon (Salon)');
     console.log('   - Spice Garden Restaurant (Restaurant)');
     console.log('   - Downtown Dental Care (Other)');
     console.log('   - Pet Paradise Grooming (Other)');
+    console.log('   - Sweet Delights Bakery (Bakery)');
+    console.log('   - Artisan Bread Co (Bakery)');
     console.log('\n⏳ PENDING VENDORS (2):');
     console.log('   - Tech Repair Pro (Other)');
     console.log('   - Elite Auto Repair (Other)');
-    console.log('\n   Note: Pending vendors cannot login until approved by admin.\n');
-
+    console.log('\n👷 LABOUR WORKERS (5):');
+    console.log('   - Ahmed Khan (Plum6):');
+    console.log('   - Mazdoor (Driver) - 4 years exp');
+    console.log('     Email: mazdoor@gmail.com | Password: 11221122');
+    console.log('   - Ahmed Khan (Plumber) - 8 years exp');
+    console.log('   - Hassan Ali (Electrician) - 10 years exp');
+    console.log('   - Bilal Mahmood (Carpenter) - 6 years exp');
+    console.log('   - Tariq Hussain (Painter) - 5 years exp');
+    console.log('   - Rashid Malik (Mason) - 12 years exp');
+    console.log('\n   📌 Labour workers can login via Vendor Login page');
+    console.log('');
+    
     process.exit(0);
   } catch (error) {
     console.error('❌ Error seeding database:', error);

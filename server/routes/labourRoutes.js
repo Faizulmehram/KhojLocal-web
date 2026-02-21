@@ -11,6 +11,7 @@ const {
   getPendingLabour,
   approveLabour,
   rejectLabour,
+  getLabourBookings,
 } = require("../controllers/labourController");
 const { protect } = require("../middleware/authMiddleware");
 const { labourDocumentUpload } = require("../middleware/uploadMiddleware");
@@ -25,6 +26,7 @@ router.get("/search", searchLabourByLocation);
 // Protected routes (Labour user)
 router.get("/profile", protect, getLabourProfile);
 router.put("/profile", protect, updateLabourProfile);
+router.get("/bookings", protect, getLabourBookings);
 
 // Protected routes (Admin only)
 router.get("/pending", protect, getPendingLabour);

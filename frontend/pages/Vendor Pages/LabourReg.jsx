@@ -3,12 +3,15 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Wrench, Phone, Shield, Upload, MapPin, FileText, AlertCircle, CheckCircle2, Clock, Briefcase } from "lucide-react";
 import VendorMap from "../../components/VendorMap";
+import useMobileNet from "../../hooks/useMobileNet";
+import { CONFIDENCE_THRESHOLD, getCnicDecision } from "../../utils/cnicRules";
 
 const SKILLS = ["Electrician", "Plumber", "Carpenter", "Painter", "Mason", "Welder", "Mechanic", "AC Technician", "Cleaner", "Gardener", "Driver", "Other"];
 const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 export default function LabourRegistration() {
   const navigate = useNavigate();
+  const { isLoading: isModelLoading, error: modelError, classifyImage } = useMobileNet();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   
@@ -39,6 +42,36 @@ export default function LabourRegistration() {
   const [cnicFrontPreview, setCnicFrontPreview] = useState(null);
   const [cnicBackPreview, setCnicBackPreview] = useState(null);
   const [selfiePreview, setSelfiePreview] = useState(null);
+  const [cnicFrontDecision, setCnicFrontDecision] = useState(null);
+  const [cnicBackDecision, setCnicBackDecision] = useState(null);
+
+  const readFileAsDataURL = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+  const loadImageFromObjectURL = (objectURL) =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = objectURL;
+    });
+
+  const classifyCnicCandidate = async (file) => {
+    const objectURL = URL.createObjectURL(file);
+
+    try {
+      const imageElement = await loadImageFromObjectURL(objectURL);
+      const predictions = await classifyImage(imageElement);
+      return getCnicDecision(predictions, CONFIDENCE_THRESHOLD);
+    } finally {
+      URL.revokeObjectURL(objectURL);
+    }
+  };
 
   // Send OTP
   const handleSendOTP = async () => {
@@ -81,29 +114,79 @@ export default function LabourRegistration() {
   };
 
   // Handle file uploads
-  const handleFileChange = (e, type) => {
+  const handleFileChange = async (e, type) => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
         setErrors({ [type]: "File size must be less than 5MB" });
         return;
       }
-      
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (type === "cnicFront") {
-          setCnicFront(file);
-          setCnicFrontPreview(reader.result);
-        } else if (type === "cnicBack") {
-          setCnicBack(file);
-          setCnicBackPreview(reader.result);
-        } else if (type === "selfie") {
-          setSelfie(file);
-          setSelfiePreview(reader.result);
+
+      if (!["image/jpeg", "image/jpg", "image/png"].includes(file.type)) {
+        setErrors({ [type]: "Only JPG and PNG images are allowed" });
+        return;
+      }
+
+      if (type === "cnicFront" || type === "cnicBack") {
+        if (isModelLoading) {
+          setErrors({ [type]: "Model is loading. Please wait a moment and try again." });
+          return;
         }
-      };
-      reader.readAsDataURL(file);
-      setErrors({ ...errors, [type]: null });
+
+        if (modelError) {
+          setErrors({ [type]: "Classifier is unavailable right now. Please refresh and try again." });
+          return;
+        }
+
+        try {
+          const decision = await classifyCnicCandidate(file);
+
+          if (decision.finalDecision !== "CNIC-like") {
+            if (type === "cnicFront") {
+              setCnicFront(null);
+              setCnicFrontPreview(null);
+              setCnicFrontDecision(null);
+            } else {
+              setCnicBack(null);
+              setCnicBackPreview(null);
+              setCnicBackDecision(null);
+            }
+
+            setErrors((prev) => ({
+              ...prev,
+              [type]: `Image blocked: not CNIC-like (top label: ${decision.topLabel}, confidence: ${(decision.confidence * 100).toFixed(1)}%).`,
+            }));
+            return;
+          }
+
+          if (type === "cnicFront") {
+            setCnicFrontDecision(decision);
+          } else {
+            setCnicBackDecision(decision);
+          }
+        } catch (classificationError) {
+          setErrors((prev) => ({
+            ...prev,
+            [type]: "Could not classify this image. Please try a clearer image.",
+          }));
+          return;
+        }
+      }
+
+      const previewData = await readFileAsDataURL(file);
+
+      if (type === "cnicFront") {
+        setCnicFront(file);
+        setCnicFrontPreview(previewData);
+      } else if (type === "cnicBack") {
+        setCnicBack(file);
+        setCnicBackPreview(previewData);
+      } else if (type === "selfie") {
+        setSelfie(file);
+        setSelfiePreview(previewData);
+      }
+
+      setErrors((prev) => ({ ...prev, [type]: null }));
     }
   };
 
@@ -368,6 +451,11 @@ export default function LabourRegistration() {
                 <label className="block text-sm font-medium mb-2">CNIC Front Image *</label>
                 <input type="file" accept="image/jpeg,image/jpg,image/png" onChange={(e) => handleFileChange(e, "cnicFront")} className="w-full px-4 py-3 border rounded-xl" />
                 {cnicFrontPreview && <img src={cnicFrontPreview} alt="CNIC Front" className="mt-3 w-full max-w-md h-48 object-cover rounded-lg border" />}
+                {cnicFrontDecision && (
+                  <p className="text-green-700 text-sm mt-1">
+                    Accepted as CNIC-like ({(cnicFrontDecision.confidence * 100).toFixed(1)}% confidence)
+                  </p>
+                )}
                 {errors.cnicFront && <p className="text-red-600 text-sm mt-1">{errors.cnicFront}</p>}
               </div>
 
@@ -375,6 +463,11 @@ export default function LabourRegistration() {
                 <label className="block text-sm font-medium mb-2">CNIC Back Image *</label>
                 <input type="file" accept="image/jpeg,image/jpg,image/png" onChange={(e) => handleFileChange(e, "cnicBack")} className="w-full px-4 py-3 border rounded-xl" />
                 {cnicBackPreview && <img src={cnicBackPreview} alt="CNIC Back" className="mt-3 w-full max-w-md h-48 object-cover rounded-lg border" />}
+                {cnicBackDecision && (
+                  <p className="text-green-700 text-sm mt-1">
+                    Accepted as CNIC-like ({(cnicBackDecision.confidence * 100).toFixed(1)}% confidence)
+                  </p>
+                )}
                 {errors.cnicBack && <p className="text-red-600 text-sm mt-1">{errors.cnicBack}</p>}
               </div>
 

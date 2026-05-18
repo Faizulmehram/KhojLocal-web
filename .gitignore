@@ -10,6 +10,12 @@ build/
 .next/
 out/
 
+# Test/coverage outputs
+coverage/
+
+# Runtime uploads (may contain sensitive data)
+uploads/
+
 # Environment variables
 .env
 .env.local

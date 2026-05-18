@@ -3,22 +3,20 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Wrench, Phone, Shield, Upload, MapPin, FileText, AlertCircle, CheckCircle2, Clock, Briefcase } from "lucide-react";
 import VendorMap from "../../components/VendorMap";
-import useMobileNet from "../../hooks/useMobileNet";
-import { CONFIDENCE_THRESHOLD, getCnicDecision } from "../../utils/cnicRules";
+// CNIC classifier removed - accept any document without client-side blocking
 
 const SKILLS = ["Electrician", "Plumber", "Carpenter", "Painter", "Mason", "Welder", "Mechanic", "AC Technician", "Cleaner", "Gardener", "Driver", "Other"];
 const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 export default function LabourRegistration() {
   const navigate = useNavigate();
-  const { isLoading: isModelLoading, error: modelError, classifyImage } = useMobileNet();
+  // classifier removed
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   
   // Form data
   const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
-  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(true); // OTP removed, treat as verified
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [cnicNumber, setCnicNumber] = useState("");
@@ -35,15 +33,13 @@ export default function LabourRegistration() {
   const [confirmPassword, setConfirmPassword] = useState("");
   
   // UI states
-  const [otpSent, setOtpSent] = useState(false);
   const [errors, setErrors] = useState({});
   
   // File previews
   const [cnicFrontPreview, setCnicFrontPreview] = useState(null);
   const [cnicBackPreview, setCnicBackPreview] = useState(null);
   const [selfiePreview, setSelfiePreview] = useState(null);
-  const [cnicFrontDecision, setCnicFrontDecision] = useState(null);
-  const [cnicBackDecision, setCnicBackDecision] = useState(null);
+  // no classifier decisions needed
 
   const readFileAsDataURL = (file) =>
     new Promise((resolve, reject) => {
@@ -53,65 +49,7 @@ export default function LabourRegistration() {
       reader.readAsDataURL(file);
     });
 
-  const loadImageFromObjectURL = (objectURL) =>
-    new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = reject;
-      img.src = objectURL;
-    });
-
-  const classifyCnicCandidate = async (file) => {
-    const objectURL = URL.createObjectURL(file);
-
-    try {
-      const imageElement = await loadImageFromObjectURL(objectURL);
-      const predictions = await classifyImage(imageElement);
-      return getCnicDecision(predictions, CONFIDENCE_THRESHOLD);
-    } finally {
-      URL.revokeObjectURL(objectURL);
-    }
-  };
-
-  // Send OTP
-  const handleSendOTP = async () => {
-    if (!phone.trim()) {
-      setErrors({ phone: "Phone number is required" });
-      return;
-    }
-    
-    setErrors({});
-    setLoading(true);
-    try {
-      await axios.post("http://localhost:5000/api/labour/send-otp", { phone });
-      setOtpSent(true);
-      alert("OTP sent to your phone number!");
-    } catch (error) {
-      setErrors({ phone: error.response?.data?.message || "Failed to send OTP" });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Verify OTP
-  const handleVerifyOTP = async () => {
-    if (!otp.trim()) {
-      setErrors({ otp: "Please enter OTP" });
-      return;
-    }
-    
-    setLoading(true);
-    try {
-      await axios.post("http://localhost:5000/api/labour/verify-otp", { phone, otp });
-      setPhoneVerified(true);
-      setErrors({});
-      alert("Phone verified successfully!");
-    } catch (error) {
-      setErrors({ otp: error.response?.data?.message || "Invalid OTP" });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // OTP removed: no send/verify handlers
 
   // Handle file uploads
   const handleFileChange = async (e, type) => {
@@ -127,51 +65,7 @@ export default function LabourRegistration() {
         return;
       }
 
-      if (type === "cnicFront" || type === "cnicBack") {
-        if (isModelLoading) {
-          setErrors({ [type]: "Model is loading. Please wait a moment and try again." });
-          return;
-        }
-
-        if (modelError) {
-          setErrors({ [type]: "Classifier is unavailable right now. Please refresh and try again." });
-          return;
-        }
-
-        try {
-          const decision = await classifyCnicCandidate(file);
-
-          if (decision.finalDecision !== "CNIC-like") {
-            if (type === "cnicFront") {
-              setCnicFront(null);
-              setCnicFrontPreview(null);
-              setCnicFrontDecision(null);
-            } else {
-              setCnicBack(null);
-              setCnicBackPreview(null);
-              setCnicBackDecision(null);
-            }
-
-            setErrors((prev) => ({
-              ...prev,
-              [type]: `Image blocked: not CNIC-like (top label: ${decision.topLabel}, confidence: ${(decision.confidence * 100).toFixed(1)}%).`,
-            }));
-            return;
-          }
-
-          if (type === "cnicFront") {
-            setCnicFrontDecision(decision);
-          } else {
-            setCnicBackDecision(decision);
-          }
-        } catch (classificationError) {
-          setErrors((prev) => ({
-            ...prev,
-            [type]: "Could not classify this image. Please try a clearer image.",
-          }));
-          return;
-        }
-      }
+      // Accept any document - no client-side CNIC classification or blocking
 
       const previewData = await readFileAsDataURL(file);
 
@@ -215,16 +109,15 @@ export default function LabourRegistration() {
     console.log("Bio:", bio);
     console.log("Password:", password ? "***" : "empty");
     
-    if (!phoneVerified) newErrors.phone = "Please verify your phone number";
+    // OTP removed: phone verification not required
+    if (!phone.trim()) newErrors.phone = "Phone number is required";
     if (!fullName.trim()) newErrors.fullName = "Full name is required";
-    if (!/^\d{5}-\d{7}-\d{1}$/.test(cnicNumber)) newErrors.cnicNumber = "Invalid CNIC format (e.g., 12345-1234567-1)";
+    if (cnicNumber && !/^\d{5}-\d{7}-\d{1}$/.test(cnicNumber)) newErrors.cnicNumber = "Invalid CNIC format (e.g., 12345-1234567-1)";
     if (!skill) newErrors.skill = "Skill is required";
     if (!experience || experience < 0) newErrors.experience = "Valid experience is required";
     if (availableDays.length === 0) newErrors.days = "Select at least one day";
     if (!workingHours.trim()) newErrors.hours = "Working hours required";
-    if (!cnicFront) newErrors.cnicFront = "CNIC front image required";
-    if (!cnicBack) newErrors.cnicBack = "CNIC back image required";
-    if (!selfie) newErrors.selfie = "Selfie required";
+    // Document uploads are optional now; do not block submission
     if (!serviceArea.latitude) newErrors.location = "Service area required";
     if (!bio.trim()) newErrors.bio = "Bio is required";
     if (password.length < 6) newErrors.password = "Password must be at least 6 characters";
@@ -269,7 +162,12 @@ export default function LabourRegistration() {
         navigate("/login");
       }
     } catch (error) {
-      alert(error.response?.data?.message || "Registration failed. Please try again.");
+      const serverMsg = error.response?.data?.message;
+      if (serverMsg && /cnic verification failed/i.test(serverMsg)) {
+        alert("Registration failed. Please try again.");
+      } else {
+        alert(serverMsg || "Registration failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -332,43 +230,11 @@ export default function LabourRegistration() {
                         setPhone(e.target.value);
                         if (errors.phone) setErrors({ ...errors, phone: null });
                       }}
-                      disabled={phoneVerified}
-                      className="flex-1 px-4 py-3 border rounded-lg disabled:bg-gray-100"
+                      className="flex-1 px-4 py-3 border rounded-lg"
                       placeholder="+92 300 1234567"
                     />
-                    <button
-                      onClick={handleSendOTP}
-                      disabled={phoneVerified || loading}
-                      className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
-                    >
-                      {otpSent ? "Resend OTP" : "Send OTP"}
-                    </button>
                   </div>
                   {errors.phone && <p className="text-red-600 text-sm">{errors.phone}</p>}
-
-                  {otpSent && !phoneVerified && (
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={otp}
-                        onChange={(e) => {
-                          setOtp(e.target.value);
-                          if (errors.otp) setErrors({ ...errors, otp: null });
-                        }}
-                        className="flex-1 px-4 py-3 border rounded-lg"
-                        placeholder="Enter 6-digit OTP"
-                        maxLength={6}
-                      />
-                      <button
-                        onClick={handleVerifyOTP}
-                        disabled={loading}
-                        className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                      >
-                        Verify
-                      </button>
-                    </div>
-                  )}
-                  {errors.otp && <p className="text-red-600 text-sm">{errors.otp}</p>}
                 </div>
               </div>
 
@@ -442,40 +308,30 @@ export default function LabourRegistration() {
               <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
                 <div>
-                  <p className="font-semibold text-yellow-900">Document Verification Required</p>
-                  <p className="text-sm text-yellow-700">Upload clear photos of your CNIC (front & back) and a selfie for verification. Max 5MB per file.</p>
+                  <p className="font-semibold text-yellow-900">Document Upload (Optional)</p>
+                  <p className="text-sm text-yellow-700">You may upload CNIC images and a selfie to speed verification. Files are optional and will not block registration. Max 5MB per file.</p>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">CNIC Front Image *</label>
+                <label className="block text-sm font-medium mb-2">CNIC Front Image</label>
                 <input type="file" accept="image/jpeg,image/jpg,image/png" onChange={(e) => handleFileChange(e, "cnicFront")} className="w-full px-4 py-3 border rounded-xl" />
                 {cnicFrontPreview && <img src={cnicFrontPreview} alt="CNIC Front" className="mt-3 w-full max-w-md h-48 object-cover rounded-lg border" />}
-                {cnicFrontDecision && (
-                  <p className="text-green-700 text-sm mt-1">
-                    Accepted as CNIC-like ({(cnicFrontDecision.confidence * 100).toFixed(1)}% confidence)
-                  </p>
-                )}
-                {errors.cnicFront && <p className="text-red-600 text-sm mt-1">{errors.cnicFront}</p>}
+                
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">CNIC Back Image *</label>
+                <label className="block text-sm font-medium mb-2">CNIC Back Image</label>
                 <input type="file" accept="image/jpeg,image/jpg,image/png" onChange={(e) => handleFileChange(e, "cnicBack")} className="w-full px-4 py-3 border rounded-xl" />
                 {cnicBackPreview && <img src={cnicBackPreview} alt="CNIC Back" className="mt-3 w-full max-w-md h-48 object-cover rounded-lg border" />}
-                {cnicBackDecision && (
-                  <p className="text-green-700 text-sm mt-1">
-                    Accepted as CNIC-like ({(cnicBackDecision.confidence * 100).toFixed(1)}% confidence)
-                  </p>
-                )}
-                {errors.cnicBack && <p className="text-red-600 text-sm mt-1">{errors.cnicBack}</p>}
+                
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Selfie Photo *</label>
+                <label className="block text-sm font-medium mb-2">Selfie Photo</label>
                 <input type="file" accept="image/jpeg,image/jpg,image/png" onChange={(e) => handleFileChange(e, "selfie")} className="w-full px-4 py-3 border rounded-xl" />
                 {selfiePreview && <img src={selfiePreview} alt="Selfie" className="mt-3 w-full max-w-md h-48 object-cover rounded-lg border" />}
-                {errors.selfie && <p className="text-red-600 text-sm mt-1">{errors.selfie}</p>}
+                
               </div>
             </div>
           )}

@@ -2,6 +2,10 @@ const User = require("../models/User");
 const Labour = require("../models/Labour");
 const generateToken = require("../utils/generateToken");
 const { generateOTP, storeOTP, verifyOTP, sendOTPSMS } = require("../utils/otpService");
+// CNIC image verification via Gemini disabled — skipping import
+const { isValidCnicFormat } = require("../utils/cnicValidator");
+
+const normalizeCnicDigits = (value = "") => String(value).replace(/\D/g, "");
 
 // @desc    Send OTP to phone number
 // @route   POST /api/labour/send-otp
@@ -133,17 +137,40 @@ exports.registerLabour = async (req, res) => {
       availability = typeof availabilityString === 'string' ? JSON.parse(availabilityString) : availabilityString;
       serviceArea = typeof serviceAreaString === 'string' ? JSON.parse(serviceAreaString) : serviceAreaString;
     } catch (parseError) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid availability or serviceArea format",
-      });
+      console.warn('Warning: Failed to parse availability/serviceArea JSON:', parseError.message);
+      // Fallback to safe defaults instead of rejecting — allow frontend to send malformed strings
+      availability = { days: [], hours: "" };
+      serviceArea = { latitude: null, longitude: null, address: "", radius: 10 };
+    }
+
+    // Accept simple latitude/longitude form fields as fallback (helps curl/testing)
+    if ((!serviceArea || !serviceArea.latitude) && (req.body.latitude || req.body.lat || req.body.serviceAreaLatitude)) {
+      serviceArea.latitude = parseFloat(req.body.serviceAreaLatitude || req.body.latitude || req.body.lat);
+    }
+    if ((!serviceArea || !serviceArea.longitude) && (req.body.longitude || req.body.lng || req.body.long || req.body.serviceAreaLongitude)) {
+      serviceArea.longitude = parseFloat(req.body.serviceAreaLongitude || req.body.longitude || req.body.lng || req.body.long);
+    }
+    if ((!serviceArea || !serviceArea.address) && req.body.serviceAreaAddress) {
+      serviceArea.address = req.body.serviceAreaAddress;
+    }
+    if ((!serviceArea || !serviceArea.radius) && req.body.serviceAreaRadius) {
+      serviceArea.radius = parseInt(req.body.serviceAreaRadius);
     }
 
     // Validation
-    if (!fullName || !phone || !cnicNumber || !skill || experience === undefined || !serviceArea || !bio || !password) {
+    const missingFields = [];
+    if (!fullName) missingFields.push("fullName");
+    if (!phone) missingFields.push("phone");
+    if (!skill) missingFields.push("skill");
+    if (experience === undefined || experience === null || experience === "") missingFields.push("experience");
+    if (!serviceArea) missingFields.push("serviceArea");
+    if (!bio) missingFields.push("bio");
+    if (!password) missingFields.push("password");
+
+    if (missingFields.length > 0) {
       return res.status(400).json({
         success: false,
-        message: "Please provide all required fields",
+        message: `Missing required fields: ${missingFields.join(", ")}`,
       });
     }
 
@@ -155,9 +182,8 @@ exports.registerLabour = async (req, res) => {
       });
     }
 
-    // Validate CNIC format
-    const cnicRegex = /^\d{5}-\d{7}-\d{1}$/;
-    if (!cnicRegex.test(cnicNumber)) {
+    // Validate CNIC format only if provided
+    if (cnicNumber && !isValidCnicFormat(cnicNumber)) {
       return res.status(400).json({
         success: false,
         message: "Invalid CNIC format. Use format: 12345-1234567-1",
@@ -182,13 +208,7 @@ exports.registerLabour = async (req, res) => {
       });
     }
 
-    // Validate documents uploaded
-    if (!req.files || !req.files.cnicFront || !req.files.cnicBack || !req.files.selfie) {
-      return res.status(400).json({
-        success: false,
-        message: "Please upload all required documents (CNIC front, back, and selfie)",
-      });
-    }
+    // Skip server-side CNIC image verification: accept uploads without checking
 
     // Validate service area coordinates
     if (!serviceArea.latitude || !serviceArea.longitude) {
@@ -228,9 +248,9 @@ exports.registerLabour = async (req, res) => {
       phoneVerified: true,
       cnicNumber,
       documents: {
-        cnicFront: `/uploads/labour/cnic/${req.files.cnicFront[0].filename}`,
-        cnicBack: `/uploads/labour/cnic/${req.files.cnicBack[0].filename}`,
-        selfie: `/uploads/labour/selfie/${req.files.selfie[0].filename}`,
+        cnicFront: req.files?.cnicFront?.[0]?.path || "",
+        cnicBack: req.files?.cnicBack?.[0]?.path || "",
+        selfie: req.files?.selfie?.[0]?.path || "",
       },
       skill,
       experience: parseInt(experience),
@@ -250,6 +270,27 @@ exports.registerLabour = async (req, res) => {
       verificationStatus: "pending",
       isApproved: false,
     });
+
+    console.log('Labour created:', { id: labour._id.toString(), verificationStatus: labour.verificationStatus, phone: labour.phone });
+
+    // Create notifications for all active admins to review this registration
+    try {
+      const Admin = require('../models/Admin');
+      const { createNotification } = require('./notificationController');
+      const admins = await Admin.find({ isActive: true });
+      for (const admin of admins) {
+        await createNotification({
+          user: admin._id,
+          type: 'vendor',
+          title: 'New Labour Registration',
+          message: `New labour ${labour.fullName} submitted for verification`,
+          link: `/admin/labour/${labour._id}`,
+          priority: 'high',
+        });
+      }
+    } catch (notifyErr) {
+      console.error('Failed to notify admins about new labour:', notifyErr.message);
+    }
 
     res.status(201).json({
       success: true,
@@ -455,7 +496,10 @@ exports.searchLabourByLocation = async (req, res) => {
 exports.getPendingLabour = async (req, res) => {
   try {
     const pendingLabour = await Labour.find({
-      verificationStatus: "pending",
+      $or: [
+        { verificationStatus: "pending" },
+        { isApproved: false, verificationStatus: { $exists: false } },
+      ],
     })
       .populate("userId", "name email phone")
       .sort({ createdAt: -1 });
@@ -480,6 +524,11 @@ exports.getPendingLabour = async (req, res) => {
 // @access  Private (Admin only)
 exports.approveLabour = async (req, res) => {
   try {
+    console.log('ApproveLabour invoked. Headers:', {
+      authorization: req.headers.authorization,
+    });
+    console.log('ApproveLabour invoking user:', req.user && { id: req.user._id, role: req.user.role, email: req.user.email });
+
     const labour = await Labour.findById(req.params.id);
 
     if (!labour) {

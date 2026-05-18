@@ -13,7 +13,7 @@ const {
   rejectLabour,
   getLabourBookings,
 } = require("../controllers/labourController");
-const { protect } = require("../middleware/authMiddleware");
+const { protect, adminOnly } = require("../middleware/authMiddleware");
 const { labourDocumentUpload } = require("../middleware/uploadMiddleware");
 
 // Public routes
@@ -29,8 +29,8 @@ router.put("/profile", protect, updateLabourProfile);
 router.get("/bookings", protect, getLabourBookings);
 
 // Protected routes (Admin only)
-router.get("/pending", protect, getPendingLabour);
-router.put("/:id/approve", protect, approveLabour);
-router.put("/:id/reject", protect, rejectLabour);
+router.get("/pending", protect, adminOnly, getPendingLabour);
+router.put("/:id/approve", protect, adminOnly, approveLabour);
+router.put("/:id/reject", protect, adminOnly, rejectLabour);
 
 module.exports = router;

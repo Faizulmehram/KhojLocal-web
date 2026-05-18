@@ -22,6 +22,7 @@ const adminManagementRoutes = require('./routes/adminManagementRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const stripeRoutes = require('./routes/stripeRoutes');
+const verifyCnicRoute = require('./routes/verifyCnicRoute');
 
 // API Routes
 app.use('/api/auth/user', userRoutes);
@@ -32,6 +33,7 @@ app.use('/api/admin', adminManagementRoutes);
 app.use('/api/vendors', publicRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/stripe', stripeRoutes);
+app.use('/api', verifyCnicRoute);
 
 console.log('✅ All routes registered successfully');
 

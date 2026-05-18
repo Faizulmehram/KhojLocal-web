@@ -35,7 +35,7 @@ const initialState = {
   businessName: "",
   address: "",
   phone: "",
-  phoneVerified: false,
+  phoneVerified: true,
   email: "",
   website: "",
   category: "",
@@ -76,7 +76,13 @@ export default function VendorOnboarding() {
     // try load saved data
     try {
       const saved = localStorage.getItem("vendor_onboard");
-      return saved ? JSON.parse(saved) : initialState;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Ensure phoneVerified remains true after OTP removal
+        parsed.phoneVerified = true;
+        return parsed;
+      }
+      return initialState;
     } catch {
       return initialState;
     }
@@ -86,9 +92,7 @@ export default function VendorOnboarding() {
   const [coverPreview, setCoverPreview] = useState(null);
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState({});
-  const [otp, setOtp] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
+  // OTP removed: phone verification handled automatically
 
   useEffect(() => {
     // preview images if files are present (persisted as base64 in localStorage or file objects not persisted)
@@ -155,7 +159,6 @@ export default function VendorOnboarding() {
       if (form.password && form.password.length < 6) e.password = "Password must be at least 6 characters";
       if (form.password && form.confirmPassword && form.password !== form.confirmPassword) e.confirmPassword = "Passwords do not match";
       if (!form.ownerPhone?.trim()) e.ownerPhone = "Owner phone is required";
-      if (!form.phoneVerified) e.phoneVerified = "Please verify your phone number";
       if (form.email && !/^[^\s]+@[^\s]+\.[^\s]+$/.test(form.email)) e.email = "Email looks invalid";
       if (!form.category) e.category = "Choose a category";
     }
@@ -184,59 +187,7 @@ export default function VendorOnboarding() {
   };
   const handleBack = () => setStep((s) => Math.max(1, s - 1));
 
-  // OTP Handlers
-  const handleSendOTP = async () => {
-    if (!form.ownerPhone || form.ownerPhone.trim() === "") {
-      alert("Please enter your phone number");
-      return;
-    }
-    
-    try {
-      setIsVerifying(true);
-      const response = await axios.post("http://localhost:5000/api/auth/vendor/send-otp", {
-        phone: form.ownerPhone,
-      });
-      
-      if (response.data.success) {
-        setOtpSent(true);
-        alert("OTP sent to your phone number!");
-      }
-    } catch (error) {
-      const errorMsg = error.response?.data?.message || "Failed to send OTP";
-      alert(errorMsg);
-      console.error("Send OTP error:", error);
-    } finally {
-      setIsVerifying(false);
-    }
-  };
-
-  const handleVerifyOTP = async () => {
-    if (!otp || otp.trim() === "") {
-      alert("Please enter the OTP");
-      return;
-    }
-    
-    try {
-      setIsVerifying(true);
-      const response = await axios.post("http://localhost:5000/api/auth/vendor/verify-otp", {
-        phone: form.ownerPhone,
-        otp: otp.trim(),
-      });
-      
-      if (response.data.success) {
-        update({ phoneVerified: true });
-        alert("Phone number verified successfully!");
-        setOtpSent(false);
-        setOtp("");
-      }
-    } catch (error) {
-      const errorMsg = error.response?.data?.message || "Invalid or expired OTP";
-      alert(errorMsg);
-      console.error("Verify OTP error:", error);
-    } finally {
-      setIsVerifying(false);
-    }
-  };
+  // OTP removed - phone verification not required
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
@@ -259,7 +210,8 @@ export default function VendorOnboarding() {
         email: form.ownerEmail,
         password: form.password,
         phone: form.ownerPhone,
-        phoneVerified: form.phoneVerified,
+        // OTP disabled: always mark phone as verified on client
+        phoneVerified: true,
         category: form.category,
         address: {
           street: form.address,
@@ -607,63 +559,11 @@ export default function VendorOnboarding() {
                       <input 
                         value={form.ownerPhone} 
                         onChange={(e)=>update({ ownerPhone: e.target.value })} 
-                        disabled={form.phoneVerified}
-                        className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#174f48] focus:border-[#174f48] outline-none transition-all disabled:bg-gray-100" 
+                        className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#174f48] focus:border-[#174f48] outline-none transition-all" 
                         placeholder="+92 300 1234567" 
                       />
-                      {!form.phoneVerified && !otpSent && (
-                        <button
-                          type="button"
-                          onClick={handleSendOTP}
-                          disabled={isVerifying || !form.ownerPhone}
-                          className="px-4 py-2 bg-[#174f48] text-white rounded-lg hover:bg-[#0f3d37] disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap text-sm"
-                        >
-                          {isVerifying ? "Sending..." : "Send OTP"}
-                        </button>
-                      )}
-                      {form.phoneVerified && (
-                        <div className="flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-lg">
-                          <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          <span className="text-sm text-green-700 font-medium whitespace-nowrap">Verified</span>
-                        </div>
-                      )}
                     </div>
-                    {otpSent && !form.phoneVerified && (
-                      <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Enter OTP</label>
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            value={otp}
-                            onChange={(e) => setOtp(e.target.value)}
-                            maxLength={6}
-                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#174f48] focus:border-[#174f48]"
-                            placeholder="Enter 6-digit OTP"
-                          />
-                          <button
-                            type="button"
-                            onClick={handleVerifyOTP}
-                            disabled={isVerifying || !otp}
-                            className="px-4 py-2 bg-[#174f48] text-white rounded-lg hover:bg-[#0f3d37] disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap text-sm"
-                          >
-                            {isVerifying ? "Verifying..." : "Verify"}
-                          </button>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={handleSendOTP}
-                          disabled={isVerifying}
-                          className="mt-2 text-sm text-[#174f48] hover:underline"
-                        >
-                          Resend OTP
-                        </button>
-                      </div>
-                    )}
-                    {!form.phoneVerified && (
-                      <p className="text-xs text-gray-500 mt-1">You must verify your phone number to continue</p>
-                    )}
+                    
                   </div>
                 </div>
               </div>

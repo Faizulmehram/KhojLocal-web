@@ -44,22 +44,32 @@ const labourSchema = new mongoose.Schema(
     },
     cnicNumber: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
-      match: [/^\d{5}-\d{7}-\d{1}$/, 'Please provide valid CNIC format (12345-1234567-1)'],
+      default: "",
+      validate: {
+        validator: function (value) {
+          if (!value) return true;
+          return /^\d{5}-\d{7}-\d{1}$/.test(value);
+        },
+        message: 'Please provide valid CNIC format (12345-1234567-1)',
+      },
     },
     documents: {
       cnicFront: {
         type: String, // URL to uploaded image
-        required: true,
+        required: false,
+        default: "",
       },
       cnicBack: {
         type: String, // URL to uploaded image
-        required: true,
+        required: false,
+        default: "",
       },
       selfie: {
         type: String, // URL to uploaded image
-        required: true,
+        required: false,
+        default: "",
       },
     },
     skill: {

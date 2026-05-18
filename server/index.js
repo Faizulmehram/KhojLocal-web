@@ -13,6 +13,7 @@ const publicRoutes = require('./routes/publicRoutes');
 const labourRoutes = require('./routes/labourRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const stripeRoutes = require('./routes/stripeRoutes');
+const verifyCnicRoute = require('./routes/verifyCnicRoute');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -39,6 +40,7 @@ app.use('/api/vendors', publicRoutes);
 app.use('/api/labour', labourRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/stripe', stripeRoutes);
+app.use('/api', verifyCnicRoute);
 
 console.log('✅ All routes registered including Stripe routes');
 

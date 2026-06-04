@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
 import axios from 'axios';
 import { UserCheck, Phone, Shield, MapPin, Briefcase, X, CheckCircle, FileText, Image } from 'lucide-react';
+import API_BASE_URL from '../../config/api';
 
 export default function LabourVerification() {
   const [labourList, setLabourList] = useState([]);
@@ -18,7 +19,7 @@ export default function LabourVerification() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/labour/pending', {
+      const response = await axios.get(`${API_BASE_URL}/api/labour/pending`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setLabourList(response.data.labour || []);
@@ -34,7 +35,7 @@ export default function LabourVerification() {
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `http://localhost:5000/api/labour/${labourId}/approve`,
+        `${API_BASE_URL}/api/labour/${labourId}/approve`,
         {},
         { headers: { Authorization: `Bearer ${token}` }}
       );
@@ -58,7 +59,7 @@ export default function LabourVerification() {
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `http://localhost:5000/api/labour/${labourId}/reject`,
+        `${API_BASE_URL}/api/labour/${labourId}/reject`,
         { reason: rejectionReason },
         { headers: { Authorization: `Bearer ${token}` }}
       );
@@ -302,28 +303,28 @@ export default function LabourVerification() {
                     <div>
                       <p className="text-xs md:text-sm text-gray-500 mb-2">CNIC Front</p>
                       <img
-                        src={`http://localhost:5000${selectedLabour.documents?.cnicFront}`}
+                        src={`${API_BASE_URL}${selectedLabour.documents?.cnicFront}`}
                         alt="CNIC Front"
                         className="w-full h-32 md:h-40 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition"
-                        onClick={() => window.open(`http://localhost:5000${selectedLabour.documents?.cnicFront}`, '_blank')}
+                        onClick={() => window.open(`${API_BASE_URL}${selectedLabour.documents?.cnicFront}`, '_blank')}
                       />
                     </div>
                     <div>
                       <p className="text-xs md:text-sm text-gray-500 mb-2">CNIC Back</p>
                       <img
-                        src={`http://localhost:5000${selectedLabour.documents?.cnicBack}`}
+                        src={`${API_BASE_URL}${selectedLabour.documents?.cnicBack}`}
                         alt="CNIC Back"
                         className="w-full h-32 md:h-40 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition"
-                        onClick={() => window.open(`http://localhost:5000${selectedLabour.documents?.cnicBack}`, '_blank')}
+                        onClick={() => window.open(`${API_BASE_URL}${selectedLabour.documents?.cnicBack}`, '_blank')}
                       />
                     </div>
                     <div>
                       <p className="text-xs md:text-sm text-gray-500 mb-2">Selfie Photo</p>
                       <img
-                        src={`http://localhost:5000${selectedLabour.documents?.selfie}`}
+                        src={`${API_BASE_URL}${selectedLabour.documents?.selfie}`}
                         alt="Selfie"
                         className="w-full h-32 md:h-40 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition"
-                        onClick={() => window.open(`http://localhost:5000${selectedLabour.documents?.selfie}`, '_blank')}
+                        onClick={() => window.open(`${API_BASE_URL}${selectedLabour.documents?.selfie}`, '_blank')}
                       />
                     </div>
                   </div>

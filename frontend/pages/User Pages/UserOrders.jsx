@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Calendar, Clock, MapPin, ChevronDown, ChevronUp, Search, Package, CheckCircle, XCircle } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import axios from "axios";
+import API_BASE_URL from '../../config/api';
 
 function StatusBadge({ status }) {
   const statusMap = {
@@ -179,7 +180,7 @@ export default function UserOrders() {
         return;
       }
 
-      const response = await axios.get("http://localhost:5000/api/auth/user/orders/my-orders", {
+      const response = await axios.get(`${API_BASE_URL}/api/auth/user/orders/my-orders`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -204,7 +205,7 @@ export default function UserOrders() {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        `http://localhost:5000/api/auth/user/orders/${orderId}/cancel`,
+        `${API_BASE_URL}/api/auth/user/orders/${orderId}/cancel`,
         {},
         {
           headers: {

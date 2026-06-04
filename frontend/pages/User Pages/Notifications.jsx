@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Check, Trash2, Filter, RefreshCw } from 'lucide-react';
 import Navbar from '../../components/Navbar';
+import API_BASE_URL from '../../config/api';
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState([]);
@@ -23,7 +24,7 @@ export default function NotificationsPage() {
         return;
       }
 
-      let url = 'http://localhost:5000/api/notifications?limit=50';
+      let url = `${API_BASE_URL}/api/notifications?limit=50`;
       if (filter === 'unread') {
         url += '&unread=true';
       }
@@ -62,7 +63,7 @@ export default function NotificationsPage() {
       const user = JSON.parse(localStorage.getItem('user'));
       if (!user?.token) return;
 
-      const response = await fetch(`http://localhost:5000/api/notifications/${notificationId}/read`, {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/${notificationId}/read`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${user.token}`,
@@ -87,7 +88,7 @@ export default function NotificationsPage() {
       const user = JSON.parse(localStorage.getItem('user'));
       if (!user?.token) return;
 
-      const response = await fetch('http://localhost:5000/api/notifications/mark-all-read', {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/mark-all-read`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${user.token}`,
@@ -108,7 +109,7 @@ export default function NotificationsPage() {
       const user = JSON.parse(localStorage.getItem('user'));
       if (!user?.token) return;
 
-      const response = await fetch(`http://localhost:5000/api/notifications/${notificationId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/${notificationId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${user.token}`,
@@ -132,7 +133,7 @@ export default function NotificationsPage() {
       const user = JSON.parse(localStorage.getItem('user'));
       if (!user?.token) return;
 
-      const response = await fetch('http://localhost:5000/api/notifications/clear-read', {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/clear-read`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${user.token}`,

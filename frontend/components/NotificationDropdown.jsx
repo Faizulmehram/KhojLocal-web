@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, X, Check, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import API_BASE_URL from '../config/api';
 
 export default function NotificationDropdown() {
   const [notifications, setNotifications] = useState([]);
@@ -41,7 +42,7 @@ export default function NotificationDropdown() {
       const user = JSON.parse(localStorage.getItem('user'));
       if (!user?.token) return;
 
-      const response = await fetch('http://localhost:5000/api/notifications/unread-count', {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/unread-count`, {
         headers: {
           'Authorization': `Bearer ${user.token}`,
         },
@@ -62,7 +63,7 @@ export default function NotificationDropdown() {
       const user = JSON.parse(localStorage.getItem('user'));
       if (!user?.token) return;
 
-      const response = await fetch('http://localhost:5000/api/notifications?limit=20', {
+      const response = await fetch(`${API_BASE_URL}/api/notifications?limit=20`, {
         headers: {
           'Authorization': `Bearer ${user.token}`,
         },
@@ -85,7 +86,7 @@ export default function NotificationDropdown() {
       const user = JSON.parse(localStorage.getItem('user'));
       if (!user?.token) return;
 
-      const response = await fetch(`http://localhost:5000/api/notifications/${notificationId}/read`, {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/${notificationId}/read`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${user.token}`,
@@ -110,7 +111,7 @@ export default function NotificationDropdown() {
       const user = JSON.parse(localStorage.getItem('user'));
       if (!user?.token) return;
 
-      const response = await fetch('http://localhost:5000/api/notifications/mark-all-read', {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/mark-all-read`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${user.token}`,
@@ -131,7 +132,7 @@ export default function NotificationDropdown() {
       const user = JSON.parse(localStorage.getItem('user'));
       if (!user?.token) return;
 
-      const response = await fetch(`http://localhost:5000/api/notifications/${notificationId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/${notificationId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${user.token}`,

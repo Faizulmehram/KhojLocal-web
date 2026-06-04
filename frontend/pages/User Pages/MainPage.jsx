@@ -5,6 +5,7 @@ import Navbar from '../../components/Navbar';
 import LabourCard from '../../components/LabourCard';
 import VendorCard from '../../components/VendorCard';
 import axios from 'axios';
+import API_BASE_URL from '../../config/api';
 
 export default function MainPage() {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ export default function MainPage() {
   const fetchRecommendedVendors = async () => {
     try {
       console.log('Fetching vendors from API...');
-      const response = await axios.get('http://localhost:5000/api/vendors');
+      const response = await axios.get(`${API_BASE_URL}/api/vendors`);
       console.log('API Response:', response.data);
       console.log('Total vendors received:', response.data.length);
       setRecommendedVendors(response.data);
@@ -41,7 +42,7 @@ export default function MainPage() {
   const fetchLabourWorkers = async () => {
     try {
       console.log('Fetching labour workers from API...');
-      const response = await axios.get('http://localhost:5000/api/labour/all?isApproved=true');
+      const response = await axios.get(`${API_BASE_URL}/api/labour/all?isApproved=true`);
       console.log('Labour workers response:', response.data);
       
       // The API returns { success, count, labour: [...] }

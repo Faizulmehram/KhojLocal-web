@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import VendorSidebar from '../../components/VendorSidebar';
 import axios from 'axios';
+import API_BASE_URL from '../../config/api';
 
 // Helper function to format date
 const formatDate = (dateString) => {
@@ -70,7 +71,7 @@ export default function BookingManagement() {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const response = await axios.get("http://localhost:5000/api/auth/vendor/profile", {
+      const response = await axios.get(`${API_BASE_URL}/api/auth/vendor/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       
@@ -98,7 +99,7 @@ export default function BookingManagement() {
       if (isLabour) {
         try {
           const bookingsResponse = await axios.get(
-            "http://localhost:5000/api/labour/bookings",
+            `${API_BASE_URL}/api/labour/bookings`,
             { headers }
           );
           
@@ -133,7 +134,7 @@ export default function BookingManagement() {
         if (vendorServiceType === 'booking' || vendorServiceType === 'both') {
         try {
           const bookingsResponse = await axios.get(
-            "http://localhost:5000/api/auth/vendor/vendor/bookings",
+            `${API_BASE_URL}/api/auth/vendor/vendor/bookings`,
             { headers }
           );
           
@@ -166,7 +167,7 @@ export default function BookingManagement() {
       if (vendorServiceType === 'ordering' || vendorServiceType === 'both') {
         try {
           const ordersResponse = await axios.get(
-            "http://localhost:5000/api/auth/vendor/vendor/orders",
+            `${API_BASE_URL}/api/auth/vendor/vendor/orders`,
             { headers }
           );
           
@@ -243,8 +244,8 @@ export default function BookingManagement() {
       }
 
       const endpoint = selected.type === 'booking' 
-        ? `http://localhost:5000/api/auth/vendor/vendor/bookings/${selected.id}/accept`
-        : `http://localhost:5000/api/auth/vendor/vendor/orders/${selected.id}/accept`;
+        ? `${API_BASE_URL}/api/auth/vendor/vendor/bookings/${selected.id}/accept`
+        : `${API_BASE_URL}/api/auth/vendor/vendor/orders/${selected.id}/accept`;
 
       const response = await axios.put(endpoint, {}, {
         headers: { Authorization: `Bearer ${token}` },
@@ -275,8 +276,8 @@ export default function BookingManagement() {
       }
 
       const endpoint = selected.type === 'booking'
-        ? `http://localhost:5000/api/auth/vendor/vendor/bookings/${selected.id}/reject`
-        : `http://localhost:5000/api/auth/vendor/vendor/orders/${selected.id}/reject`;
+        ? `${API_BASE_URL}/api/auth/vendor/vendor/bookings/${selected.id}/reject`
+        : `${API_BASE_URL}/api/auth/vendor/vendor/orders/${selected.id}/reject`;
 
       const response = await axios.put(endpoint, { rejectionReason: reason }, {
         headers: { Authorization: `Bearer ${token}` },
@@ -312,7 +313,7 @@ export default function BookingManagement() {
       }
 
       const response = await axios.put(
-        `http://localhost:5000/api/auth/vendor/vendor/bookings/${selected.id}/reschedule`,
+        `${API_BASE_URL}/api/auth/vendor/vendor/bookings/${selected.id}/reschedule`,
         { proposedDate: newDate, proposedTime: newTime },
         { headers: { Authorization: `Bearer ${token}` } }
       );

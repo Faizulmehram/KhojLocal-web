@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Store, Clock, Briefcase, Image, HelpCircle } from "lucide-react";
 import VendorMap from "../../components/VendorMap";
+import API_BASE_URL from '../../config/api';
 
 /**
  * VendorOnboarding - Multi-step vendor registration form
@@ -238,7 +239,7 @@ export default function VendorOnboarding() {
         }
       };
 
-      const res = await axios.post("http://localhost:5000/api/auth/vendor/register", payload);
+      const res = await axios.post(`${API_BASE_URL}/api/auth/vendor/register`, payload);
       
       alert(`Registration successful! ${res.data.message}\n\nYour application is pending admin approval. You'll be notified once approved.`);
       console.log("Vendor registered:", res.data);

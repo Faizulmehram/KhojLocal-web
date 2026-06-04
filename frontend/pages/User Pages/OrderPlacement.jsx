@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Plus, Minus, ShoppingCart, MapPin, Clock, Package } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import axios from "axios";
+import API_BASE_URL from '../../config/api';
 
 export default function OrderPlacement() {
   const { state } = useLocation();
@@ -107,7 +108,7 @@ export default function OrderPlacement() {
       };
 
       const response = await axios.post(
-        "http://localhost:5000/api/auth/user/orders",
+        `${API_BASE_URL}/api/auth/user/orders`,
         orderData,
         {
           headers: {
@@ -122,7 +123,7 @@ export default function OrderPlacement() {
         // If Stripe payment, create checkout session
         if (paymentMethod === "Stripe") {
           const stripeResponse = await axios.post(
-            "http://localhost:5000/api/stripe/create-checkout-session/order",
+            `${API_BASE_URL}/api/stripe/create-checkout-session/order`,
             { orderId },
             { headers: { Authorization: `Bearer ${token}` } }
           );

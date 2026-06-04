@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Wrench, Phone, Shield, Upload, MapPin, FileText, AlertCircle, CheckCircle2, Clock, Briefcase } from "lucide-react";
 import VendorMap from "../../components/VendorMap";
+import API_BASE_URL from '../../config/api';
 // CNIC classifier removed - accept any document without client-side blocking
 
 const SKILLS = ["Electrician", "Plumber", "Carpenter", "Painter", "Mason", "Welder", "Mechanic", "AC Technician", "Cleaner", "Gardener", "Driver", "Other"];
@@ -151,7 +152,7 @@ export default function LabourRegistration() {
       formData.append("selfie", selfie);
 
       console.log("Sending registration request...");
-      const response = await axios.post("http://localhost:5000/api/labour/register", formData, {
+      const response = await axios.post(`${API_BASE_URL}/api/labour/register`, formData, {
         headers: { "Content-Type": "multipart/form-data" }
       });
 

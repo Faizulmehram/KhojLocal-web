@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
 import axios from 'axios';
+import API_BASE_URL from '../../config/api';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
@@ -24,7 +25,7 @@ export default function AdminUsers() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/admin/users', {
+      const response = await axios.get(`${API_BASE_URL}/api/admin/users`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUsers(response.data);
@@ -50,7 +51,7 @@ export default function AdminUsers() {
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `http://localhost:5000/api/admin/users/${selectedUser._id}`,
+        `${API_BASE_URL}/api/admin/users/${selectedUser._id}`,
         {
           name: editForm.name,
           email: editForm.email,
@@ -76,7 +77,7 @@ export default function AdminUsers() {
     try {
       const token = localStorage.getItem('token');
       await axios.delete(
-        `http://localhost:5000/api/admin/users/${selectedUser._id}`,
+        `${API_BASE_URL}/api/admin/users/${selectedUser._id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert('User deleted successfully!');
@@ -93,7 +94,7 @@ export default function AdminUsers() {
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `http://localhost:5000/api/admin/users/${user._id}`,
+        `${API_BASE_URL}/api/admin/users/${user._id}`,
         { isActive: !user.isActive },
         { headers: { Authorization: `Bearer ${token}` } }
       );

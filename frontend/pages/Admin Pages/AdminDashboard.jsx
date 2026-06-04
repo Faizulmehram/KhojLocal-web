@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminSidebar from '../../components/AdminSidebar';
 import axios from 'axios';
+import API_BASE_URL from '../../config/api';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -29,7 +30,7 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/auth/admin/dashboard-stats', {
+      const response = await axios.get(`${API_BASE_URL}/api/auth/admin/dashboard-stats`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setDashboardData(response.data);

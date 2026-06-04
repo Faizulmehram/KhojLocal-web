@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Star, Briefcase, Award, Calendar, Clock, MapPin, Phone, Mail } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import axios from 'axios';
+import API_BASE_URL from '../../config/api';
 
 // Helper function to get days in a month
 const getDaysInMonth = (year, month) => {
@@ -179,7 +180,7 @@ export default function LabourBooking() {
       console.log("Token:", token);
       
       const response = await axios.post(
-        "http://localhost:5000/api/auth/user/labour-bookings",
+        `${API_BASE_URL}/api/auth/user/labour-bookings`,
         bookingData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -192,7 +193,7 @@ export default function LabourBooking() {
         // If Stripe payment, create checkout session
         if (paymentMethod === "Stripe") {
           const stripeResponse = await axios.post(
-            "http://localhost:5000/api/stripe/create-checkout-session/booking",
+            `${API_BASE_URL}/api/stripe/create-checkout-session/booking`,
             { bookingId },
             { headers: { Authorization: `Bearer ${token}` } }
           );

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
 import axios from 'axios';
+import API_BASE_URL from '../../config/api';
 
 export default function VendorManagement() {
   const [vendors, setVendors] = useState([]);
@@ -34,7 +35,7 @@ export default function VendorManagement() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/admin/vendors', {
+      const response = await axios.get(`${API_BASE_URL}/api/admin/vendors`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setVendors(response.data);
@@ -69,7 +70,7 @@ export default function VendorManagement() {
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `http://localhost:5000/api/admin/vendors/${selectedVendor._id}`,
+        `${API_BASE_URL}/api/admin/vendors/${selectedVendor._id}`,
         {
           businessName: editForm.businessName,
           email: editForm.email,
@@ -106,7 +107,7 @@ export default function VendorManagement() {
     try {
       const token = localStorage.getItem('token');
       await axios.delete(
-        `http://localhost:5000/api/admin/vendors/${selectedVendor._id}`,
+        `${API_BASE_URL}/api/admin/vendors/${selectedVendor._id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert('Vendor deleted successfully!');
@@ -123,7 +124,7 @@ export default function VendorManagement() {
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `http://localhost:5000/api/admin/vendors/${vendor._id}`,
+        `${API_BASE_URL}/api/admin/vendors/${vendor._id}`,
         { isActive: !vendor.isActive },
         { headers: { Authorization: `Bearer ${token}` } }
       );

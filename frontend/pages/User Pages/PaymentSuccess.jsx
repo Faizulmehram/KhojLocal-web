@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, XCircle, Loader } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import axios from 'axios';
+import API_BASE_URL from '../../config/api';
 
 export default function PaymentSuccess() {
   const navigate = useNavigate();
@@ -37,7 +38,7 @@ export default function PaymentSuccess() {
       const token = user.token;
       
       const response = await axios.get(
-        `http://localhost:5000/api/stripe/verify-session/${sessionId}`,
+        `${API_BASE_URL}/api/stripe/verify-session/${sessionId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

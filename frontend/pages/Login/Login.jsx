@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { MapPin, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import API_BASE_URL from '../../config/api';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -55,7 +56,7 @@ export default function LoginPage() {
 
     try {
       // Call backend API
-      const res = await axios.post("http://localhost:5000/api/auth/user/login", {
+      const res = await axios.post(`${API_BASE_URL}/api/auth/user/login`, {
         email,
         password,
       });
@@ -98,7 +99,7 @@ export default function LoginPage() {
         phone: "", // Optional field
       };
 
-      const res = await axios.post("http://localhost:5000/api/auth/user/register", payload);
+      const res = await axios.post(`${API_BASE_URL}/api/auth/user/register`, payload);
       setRegSuccess("Account created successfully! You can now log in.");
       
       // Store token and user data
@@ -129,7 +130,7 @@ export default function LoginPage() {
     setVendorLoading(true);
 
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/vendor/login", {
+      const res = await axios.post(`${API_BASE_URL}/api/auth/vendor/login`, {
         email: vendorEmail,
         password: vendorPassword,
       });

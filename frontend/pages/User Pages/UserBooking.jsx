@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import axios from "axios";
+import API_BASE_URL from '../../config/api';
 
 // Helper function to get days in a month
 const getDaysInMonth = (year, month) => {
@@ -387,7 +388,7 @@ export default function UserBooking() {
       console.log('Booking data:', bookingData);
 
       const response = await axios.post(
-        "http://localhost:5000/api/auth/user/bookings",
+        `${API_BASE_URL}/api/auth/user/bookings`,
         bookingData,
         {
           headers: {
@@ -402,7 +403,7 @@ export default function UserBooking() {
         // If Stripe payment selected, redirect to Stripe Checkout
         if (paymentMethod === "Stripe") {
           const stripeResponse = await axios.post(
-            "http://localhost:5000/api/stripe/create-checkout-session/booking",
+            `${API_BASE_URL}/api/stripe/create-checkout-session/booking`,
             { bookingId },
             {
               headers: {

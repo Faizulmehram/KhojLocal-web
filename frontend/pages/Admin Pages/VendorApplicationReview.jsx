@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
 import axios from 'axios';
+import API_BASE_URL from '../../config/api';
 
 export default function VendorApplicationReview() {
   const [vendors, setVendors] = useState([]);
@@ -20,7 +21,7 @@ export default function VendorApplicationReview() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/admin/vendors/pending', {
+      const response = await axios.get(`${API_BASE_URL}/api/admin/vendors/pending`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setVendors(response.data);
@@ -48,7 +49,7 @@ export default function VendorApplicationReview() {
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `http://localhost:5000/api/admin/vendors/${selectedVendor._id}`,
+        `${API_BASE_URL}/api/admin/vendors/${selectedVendor._id}`,
         { status: 'Approved' },
         { headers: { Authorization: `Bearer ${token}` }}
       );
@@ -66,7 +67,7 @@ export default function VendorApplicationReview() {
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `http://localhost:5000/api/admin/vendors/${selectedVendor._id}`,
+        `${API_BASE_URL}/api/admin/vendors/${selectedVendor._id}`,
         { status: 'Rejected' },
         { headers: { Authorization: `Bearer ${token}` }}
       );

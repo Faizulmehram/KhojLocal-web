@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Search, MapPin, Star, SlidersHorizontal, X } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import axios from 'axios';
+import API_BASE_URL from '../../config/api';
 
 function SidebarFilters({
   selectedCategory,
@@ -202,7 +203,7 @@ export default function SearchResults() {
         if (searchQuery) params.search = searchQuery;
         if (selectedCategory) params.category = selectedCategory;
 
-        const response = await axios.get('http://localhost:5000/api/vendors', { params });
+        const response = await axios.get(`${API_BASE_URL}/api/vendors`, { params });
         setBusinesses(response.data);
       } catch (error) {
         console.error('Error fetching vendors:', error);
